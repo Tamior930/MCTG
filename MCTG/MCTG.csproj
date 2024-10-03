@@ -7,4 +7,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="BusinessLayer\Interfaces\" />
+    <Folder Include="BusinessLayer\Controller\" />
+    <Folder Include="Dal\" />
+    <Folder Include="PresentationLayer\Controller\" />
+  </ItemGroup>
+
 </Project>

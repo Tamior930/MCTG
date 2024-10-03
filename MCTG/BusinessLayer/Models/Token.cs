@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MCTG.Models
+namespace MCTG.BusinessLayer.Models
 {
     internal class Token
     {
-        public string Value {  get; set; }
+        public string Value { get; set; }
 
         public Token(string token)
         {
