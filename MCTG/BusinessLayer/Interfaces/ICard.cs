@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace MCTG.BusinessLayer.Interfaces
 {
-    internal interface ICard
+    public interface ICard
     {
         string Name { get; }
         int Damage { get; }

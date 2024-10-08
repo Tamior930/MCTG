@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MCTG.BusinessLayer.Models
 {
-    internal class Deck
+    public class Deck
     {
         public List<Card> Cards { get; private set; }
 

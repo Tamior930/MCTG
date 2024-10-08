@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MCTG.BusinessLayer.Models
 {
-    internal class Token
+    public class Token
     {
         public string Value { get; private set; }
         public DateTime Expiration { get; private set; }

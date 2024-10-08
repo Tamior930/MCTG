@@ -6,19 +6,17 @@ using System.Threading.Tasks;
 
 namespace MCTG.BusinessLayer.Models
 {
-    internal class User
+    public class User
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public int Coins { get; set; }
-        public List<Card> Stack { get; set; }
-        public Deck Deck { get; set; }
-
-        public string Token { get; set; }
-
-        public int ELO { get; set; }
-        public int Wins { get; set; }
-        public int Losses { get; set; }
+        public string Username { get; private set; }
+        public string Password { get; private set; }
+        public int Coins { get; private set; }
+        public List<Card> Stack { get; private set; }
+        public Deck Deck { get; private set; }
+        public Token AuthToken { get; private set; }
+        public int ELO { get; private set; }
+        public int Wins { get; private set; }
+        public int Losses { get; private set; }
 
         public User(string username, string password)
         {
@@ -32,10 +30,10 @@ namespace MCTG.BusinessLayer.Models
             Losses = 0;
         }
 
-        //public void AssignToken(Token token)
-        //{
-        //    AuthToken = token;
-        //}
+        public void AssignToken(Token token)
+        {
+            AuthToken = token;
+        }
 
         public void AddCard(Card card)
         {

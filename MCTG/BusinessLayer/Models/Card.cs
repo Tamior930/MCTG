@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace MCTG.BusinessLayer.Models
 {
-    enum ElementType
+    public enum ElementType
     {
         Fire,
         Water,
         Normal
     }
-    abstract class Card : ICard
+    public abstract class Card : ICard
     {
         public string Name { get; private set; }
         public int Damage { get; private set; }
