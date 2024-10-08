@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MCTG.BusinessLayer.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,15 +7,28 @@ using System.Threading.Tasks;
 
 namespace MCTG.BusinessLayer.Models
 {
-    class Card
+    enum ElementType
     {
-        public string CardName { get; set; }
-        public int Damage { get; set; }
+        Fire,
+        Water,
+        Normal
+    }
+    abstract class Card : ICard
+    {
+        public string Name { get; private set; }
+        public int Damage { get; private set; }
+        public ElementType ElementType { get; private set; }
 
-        public Card(string cardName, int damage)
+        protected Card(string name, int damage, ElementType elementType)
         {
-            CardName = cardName;
+            Name = name;
             Damage = damage;
+            ElementType = elementType;
+        }
+
+        public virtual double CalculateDamage(ICard opponent)
+        {
+            return Damage;
         }
     }
 }
