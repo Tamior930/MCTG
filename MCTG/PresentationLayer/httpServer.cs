@@ -1,15 +1,10 @@
-﻿using MCTG.BusinessLayer.Controller;
-using MCTG.Dal;
+﻿using MCTG.Dal;
 using MCTG.PresentationLayer.Controller;
 using MCTG.PresentationLayer.Services;
 using MCTG.PresentationLayer.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace MCTG.PresentationLayer
 {
@@ -23,7 +18,7 @@ namespace MCTG.PresentationLayer
 
         public httpServer()
         {
-            _listener = new TcpListener(IPAddress.Loopback, 8080);
+            _listener = new TcpListener(IPAddress.Loopback, 1001);
             _requestParser = new HttpRequestParser();
             _responseParser = new HttpResponseParser();
 

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MCTG.PresentationLayer.Services
+﻿namespace MCTG.PresentationLayer.Services
 {
     public class CardService
     {

@@ -1,11 +1,4 @@
-﻿using MCTG.BusinessLayer.Interfaces;
-using MCTG.BusinessLayer.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MCTG.BusinessLayer.Models;
 
 namespace MCTG.Dal
 {
