@@ -4,7 +4,7 @@ namespace MCTG.Dal
 {
     public class InMemoryUserRepository : IUserRepository
     {
-        private List<User> _users;
+        private readonly List<User> _users;
 
         public InMemoryUserRepository()
         {
@@ -18,7 +18,7 @@ namespace MCTG.Dal
 
         public User GetUserByUsername(string username)
         {
-            return _users.FirstOrDefault(u => u.Username == username);
+            return _users.Find(u => u.Username == username);
         }
 
         public bool UserExists(string username)

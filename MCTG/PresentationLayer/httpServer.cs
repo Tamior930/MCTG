@@ -37,7 +37,7 @@ namespace MCTG.PresentationLayer
         public void Start()
         {
             _listener.Start();
-            Console.WriteLine("Server started on {0}", _listener.LocalEndpoint);
+            Console.WriteLine($"Server started on {_listener.LocalEndpoint}");
 
             while (true)
             {
@@ -109,7 +109,7 @@ namespace MCTG.PresentationLayer
 
                 //// Read the request
                 string rawRequest = ReadRequest(reader);
-                Console.WriteLine("Raw Request:\n{0}", rawRequest);
+                Console.WriteLine($"\nRaw Request:\n{rawRequest}");
 
                 //// Parse the request
                 HttpRequest request = _requestParser.Parse(rawRequest);
@@ -119,7 +119,7 @@ namespace MCTG.PresentationLayer
 
                 //// Create raw response
                 string rawResponse = _responseParser.CreateResponse(response);
-                Console.WriteLine("Raw Response:\n{0}", rawResponse);
+                Console.WriteLine($"\nRaw Response:\n{rawResponse}");
 
                 //// Send response
                 writer.Write(rawResponse);

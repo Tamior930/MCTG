@@ -32,11 +32,15 @@ namespace MCTG.PresentationLayer.Utils
             while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
             {
                 string[] header = lines[i].Split(": ");
-                if (header.Length == 2)
-                    request.Headers[header[0]] = header[1];
+                if (header.Length == 2) // Check if we have a valid header (name and value)
+                {
+                    string headerName = header[0];  // The part before ": "
+                    string headerValue = header[1]; // The part after ": "
+
+                    request.Headers.Add(headerName, headerValue); // Add the header to the request object
+                }
                 i++;
             }
-
 
             // Parse body
             if (request.Method == "POST" || request.Method == "PUT")

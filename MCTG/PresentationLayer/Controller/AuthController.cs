@@ -20,29 +20,43 @@ namespace MCTG.PresentationLayer.Controller
             string password = parameters.ContainsKey("password") ? parameters["password"] : null;
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
                 return CreateResponse(400, "Invalid parameters");
+            }
 
             bool success = _authService.Register(username, password);
+
             if (success)
+            {
                 return CreateResponse(201, "User registered successfully");
+            }
             else
+            {
                 return CreateResponse(409, "User already exists");
+            }
         }
 
         public string Login(string body)
         {
             var parameters = ParseBody(body);
+
             string username = parameters.ContainsKey("username") ? parameters["username"] : null;
             string password = parameters.ContainsKey("password") ? parameters["password"] : null;
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
                 return CreateResponse(400, "Invalid parameters");
+            }
 
             Token token = _authService.Login(username, password);
             if (token != null)
+            {
                 return CreateResponse(200, $"Login successful. Token: {token.Value}");
+            }
             else
+            {
                 return CreateResponse(401, "Invalid credentials");
+            }
         }
 
         private Dictionary<string, string> ParseBody(string body)
