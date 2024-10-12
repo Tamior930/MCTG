@@ -5,26 +5,29 @@ namespace MCTG.PresentationLayer.Services
 {
     public class AuthService
     {
-        private readonly IUserRepository _playerRepository;
+        private readonly IUserRepository _userRepository;
 
-        public AuthService(IUserRepository playerRepository)
+        public AuthService(IUserRepository userRepository)
         {
-            _playerRepository = playerRepository;
+            _userRepository = userRepository;
         }
 
         public bool Register(string username, string password)
         {
-            if (_playerRepository.UserExists(username))
-                return false;
+            if (_userRepository.UserExists(username))
+            {
+                return false; // Username already exists
+            }
 
             User newUser = new User(username, password);
-            _playerRepository.AddUser(newUser);
-            return true;
+            _userRepository.AddUser(newUser);
+            return true; // Registration successful
         }
 
+        // Checks Login if OK and then assigns the token to the User
         public Token Login(string username, string password)
         {
-            User user = _playerRepository.GetUserByUsername(username);
+            User user = _userRepository.GetUserByUsername(username);
             if (user != null && user.Password == password)
             {
                 Token token = Token.GenerateToken();
@@ -32,16 +35,6 @@ namespace MCTG.PresentationLayer.Services
                 return token;
             }
             return null;
-        }
-
-        public bool ValidateToken(string tokenValue)
-        {
-            foreach (var user in _playerRepository.GetAllUsers())
-            {
-                if (user.AuthToken != null && user.AuthToken.Value == tokenValue && user.AuthToken.IsValid())
-                    return true;
-            }
-            return false;
         }
     }
 }

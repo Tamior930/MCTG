@@ -2,6 +2,7 @@
 
 namespace MCTG.Dal
 {
+    // ONLY FOR THE CURRENT SUBMISSION (MEMORY LOGIN/REGISTER)
     public class InMemoryUserRepository : IUserRepository
     {
         private readonly List<User> _users;

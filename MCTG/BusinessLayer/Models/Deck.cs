@@ -12,16 +12,18 @@
         public void SetDeck(List<Card> selectedCards)
         {
             if (selectedCards.Count != 4)
-                throw new System.Exception("A deck must consist of exactly 4 cards.");
-
+            {
+                // Err: Card can only be 4!
+            }
             Cards = selectedCards;
         }
 
         public void AddCard(Card card)
         {
             if (Cards.Count >= 4)
-                throw new System.Exception("Deck already has 4 cards.");
-
+            {
+                // Err: Deck already has 4 cards!
+            }
             Cards.Add(card);
         }
 

@@ -2,7 +2,7 @@
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static void main()
         {
             httpServer server = new httpServer();
             Console.WriteLine("Starting server...");

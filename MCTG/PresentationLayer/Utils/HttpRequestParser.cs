@@ -17,41 +17,40 @@ namespace MCTG.PresentationLayer.Utils
 
     public class HttpRequestParser
     {
+        //Parse HTTP Requests
         public HttpRequest Parse(string rawRequest)
         {
             HttpRequest request = new HttpRequest();
             string[] lines = rawRequest.Split("\r\n");
 
-            // Parse request line
+            // Parse the first line for the HTTP method and path
             string[] requestLine = lines[0].Split(' ');
             request.Method = requestLine[0];
             request.Path = requestLine[1];
 
             // Parse headers
             int i = 1;
-            while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
+            while (i < lines.Length - 1 && !string.IsNullOrWhiteSpace(lines[i]))
             {
                 string[] header = lines[i].Split(": ");
                 if (header.Length == 2) // Check if we have a valid header (name and value)
                 {
-                    string headerName = header[0];  // The part before ": "
-                    string headerValue = header[1]; // The part after ": "
+                    string headerName = header[0];  // Name of the header
+                    string headerValue = header[1]; // Value of the header
 
-                    request.Headers.Add(headerName, headerValue); // Add the header to the request object
+                    request.Headers.Add(headerName, headerValue);
                 }
                 i++;
             }
 
-            // Parse body
-            if (request.Method == "POST" || request.Method == "PUT")
+            // Body
+            var body = new StringBuilder();
+            while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
             {
-                StringBuilder bodyBuilder = new StringBuilder();
-                for (int j = i + 1; j < lines.Length; j++)
-                {
-                    bodyBuilder.AppendLine(lines[j]);
-                }
-                request.Body = bodyBuilder.ToString().Trim();
+                body.AppendLine(lines[i]);
+                i++;
             }
+            request.Body = body.ToString();
 
             return request;
         }

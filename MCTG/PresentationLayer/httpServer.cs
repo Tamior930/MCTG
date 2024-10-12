@@ -23,11 +23,11 @@ namespace MCTG.PresentationLayer
             _responseParser = new HttpResponseParser();
 
             // Initialize repositories
-            IUserRepository playerRepository = new InMemoryUserRepository();
+            IUserRepository userRepository = new InMemoryUserRepository();
 
             // Initialize services
-            AuthService authService = new AuthService(playerRepository);
-            UserService userService = new UserService(playerRepository);
+            AuthService authService = new AuthService(userRepository);
+            UserService userService = new UserService(userRepository);
 
             // Initialize controllers
             _authController = new AuthController(authService);
@@ -107,21 +107,21 @@ namespace MCTG.PresentationLayer
                 //writerAlsoToConsole.WriteLine("<html><body><h1>Hello World!</h1></body></html>");    // the HTTP-content (here we just return a minimalistic HTML Hello-World)
 
 
-                //// Read the request
+                // Read the request
                 string rawRequest = ReadRequest(reader);
                 Console.WriteLine($"\nRaw Request:\n{rawRequest}");
 
-                //// Parse the request
+                // Parse the request
                 HttpRequest request = _requestParser.Parse(rawRequest);
 
-                //// Route the request
+                // Route the request
                 HttpResponse response = RouteRequest(request);
 
-                //// Create raw response
+                // Create raw response
                 string rawResponse = _responseParser.CreateResponse(response);
                 Console.WriteLine($"\nRaw Response:\n{rawResponse}");
 
-                //// Send response
+                // Send response
                 writer.Write(rawResponse);
 
                 client.Close();
@@ -161,8 +161,17 @@ namespace MCTG.PresentationLayer
                 if (line.StartsWith("Content-Length:"))
                 {
                     string[] parts = line.Split(": ");
-                    if (parts.Length == 2 && int.TryParse(parts[1], out int length))
-                        return length;
+
+                    if (parts.Length == 2)
+                    {
+                        string lengthPart = parts[1];
+                        int contentLength;
+
+                        if (int.TryParse(lengthPart, out contentLength))
+                        {
+                            return contentLength;
+                        }
+                    }
                 }
             }
             return 0;
@@ -170,47 +179,26 @@ namespace MCTG.PresentationLayer
 
         private HttpResponse RouteRequest(HttpRequest request)
         {
-            if (request.Path == "/register" && request.Method == "POST")
+            switch ((request.Path, request.Method))
             {
-                string result = _authController.Register(request.Body);
-                return CreateHttpResponse(result);
+                case ("/register", "POST"):
+                    {
+                        string result = _authController.Register(request.Body);
+                        return CreateHttpResponse(result);
+                    }
+                case ("/login", "POST"):
+                    {
+                        string result = _authController.Login(request.Body);
+                        return CreateHttpResponse(result);
+                    }
+                default:
+                    return new HttpResponse
+                    {
+                        StatusCode = 404,
+                        StatusDescription = "Not Found",
+                        Body = "Resource not found"
+                    };
             }
-            else if (request.Path == "/login" && request.Method == "POST")
-            {
-                string result = _authController.Login(request.Body);
-                return CreateHttpResponse(result);
-            }
-            else
-            {
-                return new HttpResponse
-                {
-                    StatusCode = 404,
-                    StatusDescription = "Not Found",
-                    Body = "Resource not found"
-                };
-            }
-        }
-
-        private string ExtractTokenFromHeaders(Dictionary<string, string> headers)
-        {
-            if (headers.ContainsKey("Authorization"))
-            {
-                string authHeader = headers["Authorization"];
-                return TokenUtils.ExtractToken(authHeader);
-            }
-            return null;
-        }
-
-        private string ExtractOpponentUsername(string body)
-        {
-            var parameters = body.Split('&');
-            foreach (var param in parameters)
-            {
-                var keyValue = param.Split('=');
-                if (keyValue.Length == 2 && keyValue[0] == "opponent")
-                    return keyValue[1];
-            }
-            return null;
         }
 
         private HttpResponse CreateHttpResponse(string responseString)

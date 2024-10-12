@@ -1,5 +1,6 @@
 ﻿using MCTG.BusinessLayer.Models;
 using MCTG.PresentationLayer.Services;
+using System.Text.Json;
 
 namespace MCTG.PresentationLayer.Controller
 {
@@ -15,20 +16,44 @@ namespace MCTG.PresentationLayer.Controller
 
         public string Register(string body)
         {
-            var parameters = ParseBody(body);
-            string username = parameters.ContainsKey("username") ? parameters["username"] : null;
-            string password = parameters.ContainsKey("password") ? parameters["password"] : null;
-
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            // Try to deserialize the JSON data into a dictionary
+            Dictionary<string, string> parameters;
+            try
             {
-                return CreateResponse(400, "Invalid parameters");
+                parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(body);
+            }
+            catch (JsonException)
+            {
+                return CreateResponse(400, "Invalid JSON format");
             }
 
-            bool success = _authService.Register(username, password);
+            // Get the username and password from the parameters
+            string? username = null;
+            string? password = null;
 
-            if (success)
+            if (parameters != null)
             {
-                return CreateResponse(201, "User registered successfully");
+                if (parameters.ContainsKey("Username"))
+                {
+                    username = parameters["Username"];
+                }
+                if (parameters.ContainsKey("Password"))
+                {
+                    password = parameters["Password"];
+                }
+            }
+
+            // Check if username or password is missing
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                return CreateResponse(400, "Username or password is missing");
+            }
+
+            // Try to register the user
+            bool isRegistered = _authService.Register(username, password);
+            if (isRegistered)
+            {
+                return CreateResponse(201, "Registration successful");
             }
             else
             {
@@ -38,16 +63,40 @@ namespace MCTG.PresentationLayer.Controller
 
         public string Login(string body)
         {
-            var parameters = ParseBody(body);
-
-            string username = parameters.ContainsKey("username") ? parameters["username"] : null;
-            string password = parameters.ContainsKey("password") ? parameters["password"] : null;
-
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            // Try to deserialize the JSON data into a dictionary
+            Dictionary<string, string> parameters;
+            try
             {
-                return CreateResponse(400, "Invalid parameters");
+                parameters = JsonSerializer.Deserialize<Dictionary<string, string>>(body);
+            }
+            catch (JsonException)
+            {
+                return CreateResponse(400, "Invalid JSON format");
             }
 
+            // Get the username and password from the parameters
+            string? username = null;
+            string? password = null;
+
+            if (parameters != null)
+            {
+                if (parameters.ContainsKey("Username"))
+                {
+                    username = parameters["Username"];
+                }
+                if (parameters.ContainsKey("Password"))
+                {
+                    password = parameters["Password"];
+                }
+            }
+
+            // Check if username or password is missing
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                return CreateResponse(400, "Username or password is missing");
+            }
+
+            // Try to login the user
             Token token = _authService.Login(username, password);
             if (token != null)
             {
@@ -55,39 +104,35 @@ namespace MCTG.PresentationLayer.Controller
             }
             else
             {
-                return CreateResponse(401, "Invalid credentials");
+                return CreateResponse(401, "Login failed");
             }
         }
 
-        private Dictionary<string, string> ParseBody(string body)
-        {
-            var parameters = new Dictionary<string, string>();
-            var pairs = body.Split('&');
-            foreach (var pair in pairs)
-            {
-                var keyValue = pair.Split('=');
-                if (keyValue.Length == 2)
-                    parameters[keyValue[0]] = keyValue[1];
-            }
-            return parameters;
-        }
-
+        // Helper method to create response messages
         private string CreateResponse(int statusCode, string message)
         {
-            return $"{statusCode} {GetStatusDescription(statusCode)}\n{message}";
+            string statusDescription = GetStatusDescription(statusCode);
+            return $"{statusCode} {statusDescription}\n{message}";
         }
 
+        // Helper method to return the description for each status code
         private string GetStatusDescription(int statusCode)
         {
-            return statusCode switch
+            switch (statusCode)
             {
-                200 => "OK",
-                201 => "Created",
-                400 => "Bad Request",
-                401 => "Unauthorized",
-                409 => "Conflict",
-                _ => "Error"
-            };
+                case 200:
+                    return "OK";
+                case 201:
+                    return "Created";
+                case 400:
+                    return "Bad Request";
+                case 401:
+                    return "Unauthorized";
+                case 409:
+                    return "Conflict";
+                default:
+                    return "Unknown Error";
+            }
         }
     }
 }

@@ -2,6 +2,7 @@
 {
     public class User
     {
+        // This Class is self-explainatory I guess
         public string Username { get; private set; }
         public string Password { get; private set; }
         public int Coins { get; private set; }

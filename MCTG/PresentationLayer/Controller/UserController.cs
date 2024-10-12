@@ -1,6 +1,6 @@
 ﻿namespace MCTG.PresentationLayer.Controller
 {
-    internal class PlayerController
+    internal class UserController
     {
     }
 }

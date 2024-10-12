@@ -11,33 +11,47 @@ namespace MCTG.BusinessLayer.Models
 
         public override double CalculateDamage(ICard opponent)
         {
+            // Check if the opponent iss a MonsterCard
             if (opponent is MonsterCard)
             {
+                // Use a switch statement to determine damage based on element types
                 switch (ElementType)
                 {
-                    case ElementType.Water when opponent.ElementType == ElementType.Fire:
-                        return Damage * 2; // Effective
+                    case ElementType.Water:
+                        switch (opponent.ElementType)
+                        {
+                            case ElementType.Fire:
+                                return Damage * 2; // Water is effective against Fire
+                            case ElementType.Normal:
+                                return Damage * 0.5; // Water is not effective against Normal
+                        }
+                        break;
 
-                    case ElementType.Fire when opponent.ElementType == ElementType.Normal:
-                        return Damage * 2; // Effective
+                    case ElementType.Fire:
+                        switch (opponent.ElementType)
+                        {
+                            case ElementType.Normal:
+                                return Damage * 2; // Fire is effective against Normal
+                            case ElementType.Water:
+                                return Damage * 0.5; // Fire is not effective against Water
+                        }
+                        break;
 
-                    case ElementType.Normal when opponent.ElementType == ElementType.Water:
-                        return Damage * 2; // Effective
-
-                    case ElementType.Fire when opponent.ElementType == ElementType.Water:
-                        return Damage * 0.5; // Not Effective
-
-                    case ElementType.Normal when opponent.ElementType == ElementType.Fire:
-                        return Damage * 0.5; // Not Effective
-
-                    case ElementType.Water when opponent.ElementType == ElementType.Normal:
-                        return Damage * 0.5; // Not Effective
-
-                    default:
-                        return Damage; // No Effect
+                    case ElementType.Normal:
+                        switch (opponent.ElementType)
+                        {
+                            case ElementType.Water:
+                                return Damage * 2; // Normal is effective against Water
+                            case ElementType.Fire:
+                                return Damage * 0.5; // Normal is not effective against Fire
+                        }
+                        break;
                 }
             }
-            return Damage;
+
+            // If none of the conditions are met, return the base damage
+            return Damage; // No Effeft
         }
+
     }
 }

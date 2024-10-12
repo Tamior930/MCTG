@@ -11,6 +11,7 @@
             Expiration = expiration;
         }
 
+        // Checks if the token is valid: returns true if Expiration is greater than the current time.
         public bool IsValid()
         {
             return DateTime.Now < Expiration;
@@ -23,9 +24,9 @@
             return new Token(tokenValue, expiration);
         }
 
-        public void Invalidate()
-        {
-            Expiration = DateTime.Now.AddSeconds(-1);
-        }
+        //public void Invalidate()
+        //{
+        //    Expiration = DateTime.Now.AddSeconds(-1);
+        //}
     }
 }
