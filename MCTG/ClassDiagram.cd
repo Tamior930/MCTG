@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="MCTG.BusinessLayer.Controller.BattleManager">
+    <Position X="11.75" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>BusinessLayer\Controller\BattleManager.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.BusinessLayer.Controller.TradingMechanism">
+    <Position X="11.75" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>BusinessLayer\Controller\TradingMechanism.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.BusinessLayer.Models.Card">
+    <Position X="8.75" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAABACAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQA=</HashCode>
+      <FileName>BusinessLayer\Models\Card.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="MCTG.BusinessLayer.Models.Deck">
+    <Position X="24" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIAAAAAAAAAQAAAAEAAAIAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>BusinessLayer\Models\Deck.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.BusinessLayer.Models.MonsterCard">
+    <Position X="7.75" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>BusinessLayer\Models\MonsterCard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.BusinessLayer.Models.SpellCard">
+    <Position X="9.75" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQA=</HashCode>
+      <FileName>BusinessLayer\Models\SpellCard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.BusinessLayer.Models.Token">
+    <Position X="25.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAEAAAAAAAAgAAAAAAAAAAAAAAAAgAAAAAAA=</HashCode>
+      <FileName>BusinessLayer\Models\Token.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.BusinessLayer.Models.User">
+    <Position X="18.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAAYAAQCAAgAAQAAQAACAAAgAAAAAAiAABAAAAAIAA=</HashCode>
+      <FileName>BusinessLayer\Models\User.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.Dal.InMemoryUserRepository" BaseTypeListCollapsed="true">
+    <Position X="18.75" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAQAAAAAAAAAAABAAAIAgAAAAAAEAAAA=</HashCode>
+      <FileName>Dal\InMemoryUserRepository.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Controller.AuthController">
+    <Position X="20.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAIAAAAAAAAAAAAgAAABAAAAAAAQAABAAAA=</HashCode>
+      <FileName>PresentationLayer\Controller\AuthController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Controller.BattleController">
+    <Position X="13.5" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Controller\BattleController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Controller.CardPackageController">
+    <Position X="13.5" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Controller\CardPackageController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Controller.UserController">
+    <Position X="15.25" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Controller\UserController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Services.AuthService">
+    <Position X="20.5" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAgAAAAAAAAAAAAAAAAAAABAAAAAAAQAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Services\AuthService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Services.CardService">
+    <Position X="22.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Services\CardService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Services.UserService">
+    <Position X="22.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Services\UserService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Utils.HttpRequest">
+    <Position X="13.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAAhAAAACAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Utils\HttpRequestParser.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Utils.HttpRequestParser">
+    <Position X="13.5" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Utils\HttpRequestParser.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Utils.HttpResponse">
+    <Position X="15.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAgAAAAAAAAAAAAABAAAAAAAAAAAAIAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Utils\HttpResponseParser.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Utils.HttpResponseParser">
+    <Position X="15.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAA=</HashCode>
+      <FileName>PresentationLayer\Utils\HttpResponseParser.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Utils.TokenUtils">
+    <Position X="15.25" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\Utils\TokenUtils.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.httpServer">
+    <Position X="17" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAECCCABAAAAAAAAAEAAAAAAEAAQAAAAAAAAA=</HashCode>
+      <FileName>PresentationLayer\httpServer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MCTG.PresentationLayer.Program">
+    <Position X="17" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ=</HashCode>
+      <FileName>PresentationLayer\Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="MCTG.BusinessLayer.Interfaces.ICard">
+    <Position X="11.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAABACAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQA=</HashCode>
+      <FileName>BusinessLayer\Interfaces\ICard.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="MCTG.Dal.ICardRepository">
+    <Position X="11.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIAAAAAAAAAQAAAEAAAAAAAAAAAAAQAAAAAAAAAA=</HashCode>
+      <FileName>Dal\ICardRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="MCTG.Dal.IUserRepository">
+    <Position X="11.75" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAQAAAAAAAAAAABAAAAAgAAAAAAEAAAA=</HashCode>
+      <FileName>Dal\IUserRepository.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Enum Name="MCTG.BusinessLayer.Models.ElementType">
+    <Position X="7" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>BusinessLayer\Models\Card.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
