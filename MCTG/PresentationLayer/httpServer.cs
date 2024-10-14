@@ -18,7 +18,7 @@ namespace MCTG.PresentationLayer
 
         public httpServer()
         {
-            _listener = new TcpListener(IPAddress.Loopback, 1001);
+            _listener = new TcpListener(IPAddress.Any, 1001);
             _requestParser = new HttpRequestParser();
             _responseParser = new HttpResponseParser();
 
