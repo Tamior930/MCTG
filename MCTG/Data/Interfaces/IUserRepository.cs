@@ -1,6 +1,6 @@
 ﻿using MCTG.BusinessLayer.Models;
 
-namespace MCTG.Dal
+namespace MCTG.Data.Interfaces
 {
     public interface IUserRepository
     {

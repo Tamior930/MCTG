@@ -1,4 +1,4 @@
-﻿using MCTG.Dal;
+﻿using MCTG.Data.Interfaces;
 
 namespace MCTG.PresentationLayer.Services
 {

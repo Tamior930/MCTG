@@ -1,13 +1,13 @@
 ﻿using MCTG.BusinessLayer.Models;
+using MCTG.Data.Interfaces;
 
-namespace MCTG.Dal
+namespace MCTG.Data.Repositories
 {
-    // ONLY FOR THE CURRENT SUBMISSION (MEMORY LOGIN/REGISTER)
-    public class InMemoryUserRepository : IUserRepository
+    public class UserRepository : IUserRepository
     {
         private readonly List<User> _users;
 
-        public InMemoryUserRepository()
+        public UserRepository()
         {
             _users = new List<User>();
         }

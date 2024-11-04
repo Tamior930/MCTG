@@ -1,4 +1,5 @@
-﻿using MCTG.Dal;
+﻿using MCTG.Data.Interfaces;
+using MCTG.Data.Repositories;
 using MCTG.PresentationLayer.Controller;
 using MCTG.PresentationLayer.Services;
 using MCTG.PresentationLayer.Utils;
@@ -23,7 +24,7 @@ namespace MCTG.PresentationLayer
             _responseParser = new HttpResponseParser();
 
             // Initialize repositories
-            IUserRepository userRepository = new InMemoryUserRepository();
+            IUserRepository userRepository = new UserRepository();
 
             // Initialize services
             AuthService authService = new AuthService(userRepository);

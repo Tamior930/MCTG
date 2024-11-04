@@ -1,5 +1,5 @@
 ﻿using MCTG.BusinessLayer.Models;
-using MCTG.Dal;
+using MCTG.Data.Interfaces;
 
 namespace MCTG.PresentationLayer.Services
 {
