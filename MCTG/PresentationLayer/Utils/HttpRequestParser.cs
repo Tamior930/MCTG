@@ -30,7 +30,7 @@ namespace MCTG.PresentationLayer.Utils
 
             // Parse headers
             int i = 1;
-            while (i < lines.Length - 1 && !string.IsNullOrWhiteSpace(lines[i]))
+            while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
             {
                 string[] header = lines[i].Split(": ");
                 if (header.Length == 2) // Check if we have a valid header (name and value)
@@ -42,15 +42,16 @@ namespace MCTG.PresentationLayer.Utils
                 }
                 i++;
             }
+            i--;
 
             // Body
             var body = new StringBuilder();
-            while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
+            while (i < lines.Length)
             {
                 body.AppendLine(lines[i]);
                 i++;
             }
-            request.Body = body.ToString();
+            request.Body = body.ToString().TrimEnd(); // Remove trailing newline
 
             return request;
         }

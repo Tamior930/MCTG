@@ -22,6 +22,21 @@ namespace MCTG.Data.Repositories
             return _users.Find(u => u.Username == username);
         }
 
+        public bool RemoveUserByUsername(string username)
+        {
+            var user = _users.Find(u => u.Username == username);
+
+            if (user != null)
+            {
+                _users.Remove(user);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public bool UserExists(string username)
         {
             return _users.Any(u => u.Username == username);

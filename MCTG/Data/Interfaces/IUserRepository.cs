@@ -6,6 +6,7 @@ namespace MCTG.Data.Interfaces
     {
         void AddUser(User user);
         User GetUserByUsername(string username);
+        bool RemoveUserByUsername(string username);
         bool UserExists(string username);
         List<User> GetAllUsers();
     }
