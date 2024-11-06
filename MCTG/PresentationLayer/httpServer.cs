@@ -1,4 +1,5 @@
-﻿using MCTG.Data.Interfaces;
+﻿using MCTG.Data;
+using MCTG.Data.Interfaces;
 using MCTG.Data.Repositories;
 using MCTG.PresentationLayer.Controller;
 using MCTG.PresentationLayer.Services;
@@ -22,6 +23,14 @@ namespace MCTG.PresentationLayer
             _listener = new TcpListener(IPAddress.Any, 1001);
             _requestParser = new HttpRequestParser();
             _responseParser = new HttpResponseParser();
+
+            // Initialize database
+            var dbHandler = new DatabaseHandler();
+            if (!dbHandler.TestConnection())
+            {
+                throw new Exception("Failed to connect to database. Please check if PostgreSQL is running.");
+            }
+            dbHandler.EnsureTableExists();
 
             // Initialize repositories
             IUserRepository userRepository = new UserRepository();
@@ -133,7 +142,7 @@ namespace MCTG.PresentationLayer
         private string ReadRequest(StreamReader reader)
         {
             StringBuilder requestBuilder = new StringBuilder();
-            string line;
+            string? line;
             while (!string.IsNullOrEmpty(line = reader.ReadLine()))
             {
                 requestBuilder.AppendLine(line);

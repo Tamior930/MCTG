@@ -4,6 +4,8 @@
     {
         static void Main(string[] args)
         {
+            //UserRepositoryTests.TestUserRetrieval();
+            
             httpServer server = new httpServer();
             Console.WriteLine("Starting server...");
             server.Start();

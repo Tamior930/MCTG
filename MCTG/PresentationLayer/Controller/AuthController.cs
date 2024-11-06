@@ -28,8 +28,8 @@ namespace MCTG.PresentationLayer.Controller
             }
 
             // Get the username and password from the parameters
-            string? username = null;
-            string? password = null;
+            string username = "";
+            string password = "";
 
             if (parameters != null)
             {
@@ -75,8 +75,8 @@ namespace MCTG.PresentationLayer.Controller
             }
 
             // Get the username and password from the parameters
-            string? username = null;
-            string? password = null;
+            string username = "";
+            string password = "";
 
             if (parameters != null)
             {

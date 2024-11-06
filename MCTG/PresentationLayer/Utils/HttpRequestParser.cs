@@ -4,9 +4,9 @@ namespace MCTG.PresentationLayer.Utils
 {
     public class HttpRequest
     {
-        public string Method { get; set; }
-        public string Path { get; set; }
-        public string Body { get; set; }
+        public required string Method { get; set; }
+        public required string Path { get; set; }
+        public required string Body { get; set; }
         public Dictionary<string, string> Headers { get; set; }
 
         public HttpRequest()
@@ -20,7 +20,12 @@ namespace MCTG.PresentationLayer.Utils
         //Parse HTTP Requests
         public HttpRequest Parse(string rawRequest)
         {
-            HttpRequest request = new HttpRequest();
+            HttpRequest request = new HttpRequest()
+            {
+                Method = string.Empty,
+                Path = string.Empty,
+                Body = string.Empty
+            };
             string[] lines = rawRequest.Split("\r\n");
 
             // Parse the first line for the HTTP method and path
@@ -46,12 +51,12 @@ namespace MCTG.PresentationLayer.Utils
 
             // Body
             var body = new StringBuilder();
-            while (i < lines.Length)
+            while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
             {
                 body.AppendLine(lines[i]);
                 i++;
             }
-            request.Body = body.ToString().TrimEnd(); // Remove trailing newline
+            request.Body = body.ToString();
 
             return request;
         }

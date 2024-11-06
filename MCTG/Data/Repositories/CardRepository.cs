@@ -1,6 +1,4 @@
-﻿using MCTG.BusinessLayer.Models;
-
-namespace MCTG.Data.Repositories
+﻿namespace MCTG.Data.Repositories
 {
     public class CardRepository
     {

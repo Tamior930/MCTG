@@ -25,6 +25,18 @@
             Losses = 0;
         }
 
+        public User(string username, string password, int coins, int elo, int wins, int losses)
+        {
+            Username = username;
+            Password = password;
+            Coins = coins;
+            Stack = new List<Card>();
+            Deck = new Deck();
+            ELO = elo;
+            Wins = wins;
+            Losses = losses;
+        }
+
         public void AssignToken(Token token)
         {
             AuthToken = token;
