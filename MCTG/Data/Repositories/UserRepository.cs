@@ -18,20 +18,34 @@ namespace MCTG.Data.Repositories
         {
             using var conn = _dbHandler.GetConnection();
             conn.Open();
+            using var transaction = conn.BeginTransaction();
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
-                INSERT INTO users (username, password, coins, elo, wins, losses) 
-                VALUES (@username, @password, @coins, @elo, @wins, @losses)";
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    INSERT INTO users (username, password, coins, elo, wins, losses) 
+                    VALUES (@username, @password, @coins, @elo, @wins, @losses)
+                    RETURNING id";
 
-            cmd.Parameters.Add(new NpgsqlParameter("@username", user.Username));
-            cmd.Parameters.Add(new NpgsqlParameter("@password", user.Password));
-            cmd.Parameters.Add(new NpgsqlParameter("@coins", user.Coins));
-            cmd.Parameters.Add(new NpgsqlParameter("@elo", user.ELO));
-            cmd.Parameters.Add(new NpgsqlParameter("@wins", user.Wins));
-            cmd.Parameters.Add(new NpgsqlParameter("@losses", user.Losses));
+                cmd.Parameters.Add(new NpgsqlParameter("@username", user.Username));
+                cmd.Parameters.Add(new NpgsqlParameter("@password", user.Password));
+                cmd.Parameters.Add(new NpgsqlParameter("@coins", user.Coins));
+                cmd.Parameters.Add(new NpgsqlParameter("@elo", user.ELO));
+                cmd.Parameters.Add(new NpgsqlParameter("@wins", user.Wins));
+                cmd.Parameters.Add(new NpgsqlParameter("@losses", user.Losses));
 
-            cmd.ExecuteNonQuery();
+                // Get the generated ID and set it in the user object
+                int id = Convert.ToInt32(cmd.ExecuteScalar());
+                user.SetId(id);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         public User GetUserByUsername(string username)
@@ -47,6 +61,7 @@ namespace MCTG.Data.Repositories
             if (reader.Read())
             {
                 return new User(
+                    id: reader.GetInt32(reader.GetOrdinal("id")),
                     username: reader.GetString(reader.GetOrdinal("username")),
                     password: reader.GetString(reader.GetOrdinal("password")),
                     coins: reader.GetInt32(reader.GetOrdinal("coins")),
@@ -55,7 +70,6 @@ namespace MCTG.Data.Repositories
                     losses: reader.GetInt32(reader.GetOrdinal("losses"))
                 );
             }
-
             return null;
         }
 

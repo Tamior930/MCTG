@@ -1,4 +1,5 @@
-﻿using MCTG.Data.Interfaces;
+﻿using MCTG.BusinessLayer.Models;
+using MCTG.Data.Interfaces;
 
 namespace MCTG.PresentationLayer.Services
 {
@@ -11,10 +12,27 @@ namespace MCTG.PresentationLayer.Services
             _userRepository = userRepository;
         }
 
-        //public User GetUserByToken(string token)
-        //{
-        //    return _userRepository.GetAllUsers().FirstOrDefault(u => u.AuthToken != null && u.AuthToken.Value == token && u.AuthToken.IsValid());
-        //}
+        public User GetUserByToken(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return null;
+            }
+
+            return _userRepository.GetAllUsers().FirstOrDefault(u => u.AuthToken != null && u.AuthToken.Value == token && u.AuthToken.IsValid());
+        }
+
+        public User ValidateAndGetUser(string token, out string errorMessage)
+        {
+            var user = GetUserByToken(token);
+            if (user == null)
+            {
+                errorMessage = "Error: User not found or invalid token.";
+                return null;
+            }
+            errorMessage = null;
+            return user;
+        }
 
         //public bool PurchasePackage(User user, List<Card> package)
         //{

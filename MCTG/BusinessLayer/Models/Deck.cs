@@ -2,6 +2,7 @@
 {
     public class Deck
     {
+        private const int MAX_CARDS = 4;
         public List<Card> Cards { get; private set; }
 
         public Deck()
@@ -11,18 +12,18 @@
 
         public void SetDeck(List<Card> selectedCards)
         {
-            if (selectedCards.Count != 4)
+            if (selectedCards.Count != MAX_CARDS)
             {
-                // Err: Card can only be 4!
+                throw new ArgumentException("Deck must contain exactly 4 cards!");
             }
             Cards = selectedCards;
         }
 
         public void AddCard(Card card)
         {
-            if (Cards.Count >= 4)
+            if (Cards.Count >= MAX_CARDS)
             {
-                // Err: Deck already has 4 cards!
+                throw new InvalidOperationException("Deck already has 4 cards!");
             }
             Cards.Add(card);
         }

@@ -2,39 +2,52 @@
 {
     public class User
     {
-        // This Class is self-explainatory I guess
+        private const int STARTING_COINS = 20;
+        private const int STARTING_ELO = 100;
+        private const int PACKAGE_COST = 5;
+        private const int ELO_WIN_BONUS = 3;
+        private const int ELO_LOSS_PENALTY = 5;
+
+        public int Id { get; private set; }
         public string Username { get; private set; }
         public string Password { get; private set; }
         public int Coins { get; private set; }
-        public List<Card> Stack { get; private set; }
+        public Stack Stack { get; private set; }
         public Deck Deck { get; private set; }
         public Token AuthToken { get; private set; }
         public int ELO { get; private set; }
         public int Wins { get; private set; }
         public int Losses { get; private set; }
 
-        public User(string username, string password)
+        public User(int id, string username, string password, int coins, int elo, int wins, int losses)
         {
-            Username = username;
-            Password = password;
-            Coins = 20;
-            Stack = new List<Card>();
-            Deck = new Deck();
-            ELO = 100;
-            Wins = 0;
-            Losses = 0;
-        }
-
-        public User(string username, string password, int coins, int elo, int wins, int losses)
-        {
+            Id = id;
             Username = username;
             Password = password;
             Coins = coins;
-            Stack = new List<Card>();
+            Stack = new Stack();
             Deck = new Deck();
             ELO = elo;
             Wins = wins;
             Losses = losses;
+        }
+
+        public User(string username, string password)
+            : this(-1, username, password, STARTING_COINS, STARTING_ELO, 0, 0)
+        {
+        }
+
+        public User(string username, string password, int coins, int elo, int wins, int losses)
+            : this(-1, username, password, coins, elo, wins, losses)
+        {
+        }
+
+        public void SetId(int id)
+        {
+            if (Id == -1)
+            {
+                Id = id;
+            }
         }
 
         public void AssignToken(Token token)
@@ -42,39 +55,94 @@
             AuthToken = token;
         }
 
-        public void AddCard(Card card)
+        public bool HasValidToken()
         {
-            Stack.Add(card);
+            return AuthToken != null && AuthToken.IsValid();
         }
 
-        public bool RemoveCard(Card card)
+        // Package Purchase Methods
+        public bool CanAffordPackage()
         {
-            return Stack.Remove(card);
+            return Coins >= PACKAGE_COST;
         }
 
         public bool PurchasePackage(List<Card> package)
         {
-            if (Coins >= 5)
+            if (!CanAffordPackage())
             {
-                Coins -= 5;
-                Stack.AddRange(package);
-                return true;
+                return false;
             }
-            return false;
+
+            DeductCoins(PACKAGE_COST);
+            Stack.AddRange(package);
+            return true;
         }
 
+        private void DeductCoins(int amount)
+        {
+            Coins -= amount;
+        }
+
+        // Battle Statistics Methods
         public void UpdateELO(bool won)
         {
             if (won)
             {
-                ELO += 3;
+                ELO += ELO_WIN_BONUS;
                 Wins++;
             }
             else
             {
-                ELO -= 5;
+                ELO = Math.Max(0, ELO - ELO_LOSS_PENALTY); // Prevent negative ELO
                 Losses++;
             }
+        }
+
+        public int GetTotalGamesPlayed()
+        {
+            return Wins + Losses;
+        }
+
+        public double GetWinRate()
+        {
+            int totalGames = GetTotalGamesPlayed();
+            return totalGames > 0 ? (double)Wins / totalGames : 0;
+        }
+
+        // Deck Management Methods
+        public bool TryAddCardToDeck(Card card)
+        {
+            if (!Stack.Contains(card))
+            {
+                return false;
+            }
+
+            try
+            {
+                Deck.AddCard(card);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool TryRemoveCardFromDeck(Card card)
+        {
+            Deck.RemoveCard(card);
+            return true;
+        }
+
+        public bool HasValidDeckSize()
+        {
+            return Deck.Cards.Count == 4;
+        }
+
+        // Add this new method
+        public bool IsCardAvailableForTrade(Card card)
+        {
+            return Stack.IsCardAvailableForTrade(card, Deck);
         }
     }
 }
