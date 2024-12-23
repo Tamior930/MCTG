@@ -1,5 +1,4 @@
 ﻿using Npgsql;
-using System.Data;
 
 namespace MCTG.Data
 {
@@ -12,84 +11,78 @@ namespace MCTG.Data
             _connectionString = "Host=localhost;Port=5432;Username=mtcg_user;Password=mtcg_password;Database=mtcg_db";
         }
 
-        public IDbConnection GetConnection()
+        public NpgsqlConnection GetConnection()
         {
             return new NpgsqlConnection(_connectionString);
         }
 
-        public void EnsureTableExists()
+        public bool InitializeDatabase()
         {
             try
             {
-                using (var conn = GetConnection())
+                using var conn = GetConnection();
+                conn.Open();
+
+                // Create Users table
+                using (var cmd = conn.CreateCommand())
                 {
-                    conn.Open();
-
-                    // Create Users table
-                    using (var cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"
-                            CREATE TABLE IF NOT EXISTS users (
-                                id SERIAL PRIMARY KEY,
-                                username VARCHAR(50) UNIQUE NOT NULL,
-                                password VARCHAR(255) NOT NULL,
-                                coins INT DEFAULT 20,
-                                elo INT DEFAULT 100,
-                                wins INT DEFAULT 0,
-                                losses INT DEFAULT 0
-                            );";
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    // Create Cards table
-                    using (var cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"
-                            CREATE TABLE IF NOT EXISTS cards (
-                                id SERIAL PRIMARY KEY,
-                                name VARCHAR(50) NOT NULL,
-                                damage INT NOT NULL,
-                                element_type VARCHAR(20) NOT NULL,
-                                user_id INT REFERENCES users(id) ON DELETE SET NULL
-                            );";
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    // Create Trades table
-                    //using (var cmd = conn.CreateCommand())
-                    //{
-                    //    cmd.CommandText = @"
-                    //        CREATE TABLE IF NOT EXISTS trades (
-                    //            id SERIAL PRIMARY KEY,
-                    //            card_id INT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
-                    //            requested_type VARCHAR(20) NOT NULL,
-                    //            min_damage INT DEFAULT 0,
-                    //            active BOOLEAN DEFAULT TRUE
-                    //        );";
-                    //    cmd.ExecuteNonQuery();
-                    //}
+                    cmd.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS users (
+                            id SERIAL PRIMARY KEY,
+                            username VARCHAR(50) UNIQUE NOT NULL,
+                            password VARCHAR(50) NOT NULL,
+                            coins INT DEFAULT 20,
+                            elo INT DEFAULT 100,
+                            wins INT DEFAULT 0,
+                            losses INT DEFAULT 0
+                        );";
+                    cmd.ExecuteNonQuery();
                 }
+
+                // Create Cards table
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS cards (
+                            id SERIAL PRIMARY KEY,
+                            name VARCHAR(50) NOT NULL,
+                            damage INT NOT NULL,
+                            element_type VARCHAR(20) NOT NULL,
+                            card_type VARCHAR(10) NOT NULL,
+                            user_id INT REFERENCES users(id) ON DELETE SET NULL,
+                            in_deck BOOLEAN DEFAULT false,
+                            CONSTRAINT card_type_check CHECK (card_type IN ('Monster', 'Spell'))
+                        );";
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Create Trades table
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS trades (
+                            id SERIAL PRIMARY KEY,
+                            card_id INT REFERENCES cards(id),
+                            user_id INT REFERENCES users(id),
+                            required_type VARCHAR(20),
+                            minimum_damage INT,
+                            status VARCHAR(20) DEFAULT 'ACTIVE',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );";
+                    cmd.ExecuteNonQuery();
+                }
+
+                Console.WriteLine("Database initialized successfully!");
+                return true;
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Database initialization failed: {ex.Message}");
+                return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Database connection error: {ex.Message}");
-                throw;
-            }
-        }
-
-        public bool TestConnection()
-        {
-            try
-            {
-                using (var conn = GetConnection())
-                {
-                    conn.Open();
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Database connection test failed: {ex.Message}");
+                Console.WriteLine($"Unexpected error during database initialization: {ex.Message}");
                 return false;
             }
         }

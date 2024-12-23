@@ -1,13 +1,17 @@
-﻿namespace MCTG.PresentationLayer
+﻿using MCTG.Data;
+
+namespace MCTG.PresentationLayer
 {
     internal class Program
     {
         static void Main(string[] args)
         {
             //UserRepositoryTests.TestUserRetrieval();
-            
-            httpServer server = new httpServer();
-            Console.WriteLine("Starting server...");
+
+            DatabaseHandler dbHandler = new DatabaseHandler();
+            dbHandler.InitializeDatabase();
+
+            HttpServer server = new HttpServer();
             server.Start();
         }
     }

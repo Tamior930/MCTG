@@ -44,4 +44,4 @@ namespace MCTG.BusinessLayer.Models
             return Cards.AsReadOnly();
         }
     }
-} 
+}

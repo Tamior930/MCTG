@@ -9,5 +9,8 @@ namespace MCTG.Data.Interfaces
         void AddCardToDeck(int userId, Card card);
         void RemoveCardFromDeck(int userId, Card card);
         int GetDeckCount(int userId);
+        bool IsValidDeck(int userId);
+        Card GetRandomCardFromDeck(int userId);
+        bool TransferCardBetweenDecks(int cardId, int fromUserId, int toUserId);
     }
-} 
+}

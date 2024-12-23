@@ -1,6 +1,6 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using System.Text.Json;
+using MCTG.BusinessLayer.Models;
 using MCTG.PresentationLayer.Services;
-using System.Text.Json;
 
 namespace MCTG.PresentationLayer.Controller
 {

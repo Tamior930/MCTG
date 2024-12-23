@@ -1,6 +1,5 @@
 ﻿using MCTG.BusinessLayer.Models;
 using MCTG.Data.Interfaces;
-using System.Data;
 using Npgsql;
 
 namespace MCTG.Data.Repositories
@@ -118,6 +117,135 @@ namespace MCTG.Data.Repositories
             }
 
             return users;
+        }
+
+        public bool UpdateUserStats(int userId, bool won)
+        {
+            using var conn = _dbHandler.GetConnection();
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE users 
+                    SET elo = CASE WHEN @won THEN elo + 3 ELSE GREATEST(0, elo - 5) END,
+                        wins = CASE WHEN @won THEN wins + 1 ELSE wins END,
+                        losses = CASE WHEN @won THEN losses ELSE losses + 1 END
+                    WHERE id = @userId";
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@won", won);
+
+                int rowsAffected = cmd.ExecuteNonQuery();
+                transaction.Commit();
+                return rowsAffected > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                return false;
+            }
+        }
+
+        public bool UpdateUserCoins(int userId, int amount)
+        {
+            using var conn = _dbHandler.GetConnection();
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE users 
+                    SET coins = GREATEST(0, coins + @amount)
+                    WHERE id = @userId";
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@amount", amount);
+
+                int rowsAffected = cmd.ExecuteNonQuery();
+                transaction.Commit();
+                return rowsAffected > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                return false;
+            }
+        }
+
+        public List<User> GetScoreboard()
+        {
+            using var conn = _dbHandler.GetConnection();
+            conn.Open();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT id, username, elo, wins, losses, coins 
+                FROM users 
+                ORDER BY elo DESC, wins DESC";
+
+            var users = new List<User>();
+            using var reader = cmd.ExecuteReader();
+            
+            while (reader.Read())
+            {
+                var user = new User(
+                    id: reader.GetInt32(reader.GetOrdinal("id")),
+                    username: reader.GetString(reader.GetOrdinal("username")),
+                    password: string.Empty,  // We don't expose passwords in scoreboard
+                    coins: reader.GetInt32(reader.GetOrdinal("coins")),
+                    elo: reader.GetInt32(reader.GetOrdinal("elo")),
+                    wins: reader.GetInt32(reader.GetOrdinal("wins")),
+                    losses: reader.GetInt32(reader.GetOrdinal("losses"))
+                );
+                users.Add(user);
+            }
+
+            return users;
+        }
+
+        public bool UpdateUserProfile(int userId, UserProfile profile)
+        {
+            using var conn = _dbHandler.GetConnection();
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE users 
+                    SET name = @name, bio = @bio, image = @image
+                    WHERE id = @userId";
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@name", profile.Name);
+                cmd.Parameters.AddWithValue("@bio", profile.Bio);
+                cmd.Parameters.AddWithValue("@image", profile.Image);
+
+                int rowsAffected = cmd.ExecuteNonQuery();
+                transaction.Commit();
+                return rowsAffected > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                return false;
+            }
+        }
+
+        public int GetUserCoins(int userId)
+        {
+            using var conn = _dbHandler.GetConnection();
+            conn.Open();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT coins FROM users WHERE id = @userId";
+            cmd.Parameters.AddWithValue("@userId", userId);
+
+            var result = cmd.ExecuteScalar();
+            return result != null ? Convert.ToInt32(result) : 0;
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using MCTG.BusinessLayer.Models;
-using MCTG.PresentationLayer.Services;
+﻿using MCTG.PresentationLayer.Services;
 
 namespace MCTG.PresentationLayer.Controller
 {
