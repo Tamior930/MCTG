@@ -34,7 +34,12 @@ namespace MCTG.Data
                             coins INT DEFAULT 20,
                             elo INT DEFAULT 100,
                             wins INT DEFAULT 0,
-                            losses INT DEFAULT 0
+                            losses INT DEFAULT 0,
+                            name VARCHAR(255),
+                            bio TEXT,
+                            image VARCHAR(255),
+                            token VARCHAR(255),
+                            token_expiry TIMESTAMP
                         );";
                     cmd.ExecuteNonQuery();
                 }
@@ -65,6 +70,8 @@ namespace MCTG.Data
                             card_id INT REFERENCES cards(id),
                             user_id INT REFERENCES users(id),
                             required_type VARCHAR(20),
+                            required_element_type VARCHAR(20),
+                            required_monster_type VARCHAR(20),
                             minimum_damage INT,
                             status VARCHAR(20) DEFAULT 'ACTIVE',
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

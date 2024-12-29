@@ -6,209 +6,244 @@ namespace MCTG.Data.Repositories
 {
     public class DeckRepository : IDeckRepository
     {
-        private readonly DatabaseHandler _dbHandler;
+        private readonly DatabaseHandler _databaseHandler;
+        private const int MAX_CARDS_IN_DECK = 4;
 
         public DeckRepository()
         {
-            _dbHandler = new DatabaseHandler();
+            _databaseHandler = new DatabaseHandler();
         }
 
+        // Basic CRUD Operations
+
+        /// <summary>
+        /// Saves a new deck for a user by replacing all their current cards
+        /// </summary>
         public void SaveDeck(int userId, List<Card> cards)
         {
-            using var conn = _dbHandler.GetConnection();
-            conn.Open();
-            using var transaction = conn.BeginTransaction();
+            // Input validation
+            if (cards == null)
+            {
+                throw new ArgumentNullException(nameof(cards), "Cards list cannot be null");
+            }
+
+            if (cards.Count > MAX_CARDS_IN_DECK)
+            {
+                throw new InvalidOperationException($"Deck cannot contain more than {MAX_CARDS_IN_DECK} cards");
+            }
+
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
 
             try
             {
-                // First, remove all cards from the user's deck
-                using var clearCmd = conn.CreateCommand();
-                clearCmd.CommandText = "UPDATE cards SET in_deck = false WHERE user_id = @userId";
-                clearCmd.Parameters.AddWithValue("@userId", userId);
-                clearCmd.ExecuteNonQuery();
+                // Step 1: Remove all cards from current deck
+                RemoveAllCardsFromDeck(userId, connection);
 
-                // Then add the new cards to the deck
-                using var addCmd = conn.CreateCommand();
-                addCmd.CommandText = "UPDATE cards SET in_deck = true WHERE id = @cardId AND user_id = @userId";
-                
-                foreach (var card in cards)
-                {
-                    addCmd.Parameters.Clear();
-                    addCmd.Parameters.AddWithValue("@cardId", card.Id);
-                    addCmd.Parameters.AddWithValue("@userId", userId);
-                    addCmd.ExecuteNonQuery();
-                }
+                // Step 2: Add new cards to deck
+                AddCardsToUserDeck(userId, cards, connection);
 
                 transaction.Commit();
             }
-            catch
+            catch (Exception ex)
             {
                 transaction.Rollback();
-                throw;
+                throw new Exception("Failed to save deck: " + ex.Message);
             }
         }
 
+        private void RemoveAllCardsFromDeck(int userId, NpgsqlConnection connection)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE cards SET in_deck = false WHERE user_id = @userId";
+            command.Parameters.AddWithValue("@userId", userId);
+            command.ExecuteNonQuery();
+        }
+
+        private void AddCardsToUserDeck(int userId, List<Card> cards, NpgsqlConnection connection)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE cards SET in_deck = true WHERE id = @cardId AND user_id = @userId";
+
+            foreach (var card in cards)
+            {
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@cardId", card.Id);
+                command.Parameters.AddWithValue("@userId", userId);
+
+                int rowsAffected = command.ExecuteNonQuery();
+                if (rowsAffected == 0)
+                {
+                    throw new InvalidOperationException($"Card with ID {card.Id} does not belong to user {userId}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets all cards in a user's deck
+        /// </summary>
         public List<Card> GetDeckByUserId(int userId)
         {
-            using var conn = _dbHandler.GetConnection();
-            conn.Open();
+            var userCards = new List<Card>();
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
                 SELECT id, name, damage, element_type, card_type 
                 FROM cards 
                 WHERE user_id = @userId AND in_deck = true";
-            cmd.Parameters.AddWithValue("@userId", userId);
+            command.Parameters.AddWithValue("@userId", userId);
 
-            var cards = new List<Card>();
-            using var reader = cmd.ExecuteReader();
-            
+            using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                int id = reader.GetInt32(reader.GetOrdinal("id"));
-                string name = reader.GetString(reader.GetOrdinal("name"));
-                int damage = reader.GetInt32(reader.GetOrdinal("damage"));
-                ElementType elementType = Enum.Parse<ElementType>(reader.GetString(reader.GetOrdinal("element_type")));
-                CardType type = Enum.Parse<CardType>(reader.GetString(reader.GetOrdinal("card_type")));
-
-                Card card = type == CardType.Spell
-                    ? new SpellCard(name, damage, elementType)
-                    : new MonsterCard(name, damage, elementType);
-                card.Id = id;
-                cards.Add(card);
+                Card card = CreateCardFromDatabaseRow(reader);
+                userCards.Add(card);
             }
 
-            return cards;
+            return userCards;
         }
 
+        private Card CreateCardFromDatabaseRow(NpgsqlDataReader reader)
+        {
+            // Read basic card information
+            int id = reader.GetInt32(reader.GetOrdinal("id"));
+            string name = reader.GetString(reader.GetOrdinal("name"));
+            int damage = reader.GetInt32(reader.GetOrdinal("damage"));
+            ElementType elementType = Enum.Parse<ElementType>(reader.GetString(reader.GetOrdinal("element_type")));
+            CardType cardType = Enum.Parse<CardType>(reader.GetString(reader.GetOrdinal("card_type")));
+
+            // Create appropriate card type
+            if (cardType == CardType.Spell)
+            {
+                return new SpellCard(id, name, damage, elementType);
+            }
+            else
+            {
+                MonsterType monsterType = DetermineMonsterType(name);
+                return new MonsterCard(id, name, damage, elementType, monsterType);
+            }
+        }
+
+        /// <summary>
+        /// Adds a single card to user's deck
+        /// </summary>
         public void AddCardToDeck(int userId, Card card)
         {
-            if (GetDeckCount(userId) >= 4)
+            // Check if deck is full
+            int currentDeckSize = GetDeckCount(userId);
+            if (currentDeckSize >= MAX_CARDS_IN_DECK)
             {
-                throw new InvalidOperationException("Deck already has maximum number of cards (4)");
+                throw new InvalidOperationException($"Cannot add card. Deck already has maximum number of cards ({MAX_CARDS_IN_DECK})");
             }
 
-            using var conn = _dbHandler.GetConnection();
-            conn.Open();
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "UPDATE cards SET in_deck = true WHERE id = @cardId AND user_id = @userId";
-            cmd.Parameters.AddWithValue("@cardId", card.Id);
-            cmd.Parameters.AddWithValue("@userId", userId);
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE cards SET in_deck = true WHERE id = @cardId AND user_id = @userId";
+            command.Parameters.AddWithValue("@cardId", card.Id);
+            command.Parameters.AddWithValue("@userId", userId);
 
-            if (cmd.ExecuteNonQuery() == 0)
+            int rowsAffected = command.ExecuteNonQuery();
+            if (rowsAffected == 0)
             {
-                throw new InvalidOperationException("Card not found or doesn't belong to user");
+                throw new InvalidOperationException($"Could not add card {card.Id} to deck. Card either doesn't exist or doesn't belong to user {userId}");
             }
         }
 
+        /// <summary>
+        /// Removes a single card from user's deck
+        /// </summary>
         public void RemoveCardFromDeck(int userId, Card card)
         {
-            using var conn = _dbHandler.GetConnection();
-            conn.Open();
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "UPDATE cards SET in_deck = false WHERE id = @cardId AND user_id = @userId";
-            cmd.Parameters.AddWithValue("@cardId", card.Id);
-            cmd.Parameters.AddWithValue("@userId", userId);
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE cards SET in_deck = false WHERE id = @cardId AND user_id = @userId";
+            command.Parameters.AddWithValue("@cardId", card.Id);
+            command.Parameters.AddWithValue("@userId", userId);
 
-            if (cmd.ExecuteNonQuery() == 0)
+            int rowsAffected = command.ExecuteNonQuery();
+            if (rowsAffected == 0)
             {
-                throw new InvalidOperationException("Card not found in user's deck");
+                throw new InvalidOperationException($"Could not remove card {card.Id}. Card is not in user's deck");
             }
         }
 
-        public int GetDeckCount(int userId)
+        /// <summary>
+        /// Removes all cards from a user's deck
+        /// </summary>
+        public void ClearDeck(int userId)
         {
-            using var conn = _dbHandler.GetConnection();
-            conn.Open();
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT COUNT(*) FROM cards WHERE user_id = @userId AND in_deck = true";
-            cmd.Parameters.Add(new NpgsqlParameter("@userId", userId));
-
-            return Convert.ToInt32(cmd.ExecuteScalar());
+            try
+            {
+                RemoveAllCardsFromDeck(userId, connection);
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new Exception("Failed to clear deck: " + ex.Message);
+            }
         }
 
-        public bool IsValidDeck(int userId)
-        {
-            using var conn = _dbHandler.GetConnection();
-            conn.Open();
+        // Deck Management Operations
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT COUNT(*) FROM cards WHERE user_id = @userId AND in_deck = true";
-            cmd.Parameters.AddWithValue("@userId", userId);
-
-            int count = Convert.ToInt32(cmd.ExecuteScalar());
-            return count == 4; // A valid deck must have exactly 4 cards
-        }
-
+        /// <summary>
+        /// Gets a random card from user's deck (used in battles)
+        /// </summary>
         public Card GetRandomCardFromDeck(int userId)
         {
-            using var conn = _dbHandler.GetConnection();
-            conn.Open();
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
                 SELECT id, name, damage, element_type, card_type 
                 FROM cards 
                 WHERE user_id = @userId AND in_deck = true 
                 ORDER BY RANDOM() 
                 LIMIT 1";
-            cmd.Parameters.AddWithValue("@userId", userId);
+            command.Parameters.AddWithValue("@userId", userId);
 
-            using var reader = cmd.ExecuteReader();
+            using var reader = command.ExecuteReader();
             if (reader.Read())
             {
-                int id = reader.GetInt32(reader.GetOrdinal("id"));
-                string name = reader.GetString(reader.GetOrdinal("name"));
-                int damage = reader.GetInt32(reader.GetOrdinal("damage"));
-                ElementType elementType = Enum.Parse<ElementType>(reader.GetString(reader.GetOrdinal("element_type")));
-                CardType type = Enum.Parse<CardType>(reader.GetString(reader.GetOrdinal("card_type")));
-
-                Card card = type == CardType.Spell
-                    ? new SpellCard(name, damage, elementType)
-                    : new MonsterCard(name, damage, elementType);
-                card.Id = id;
-                return card;
+                return CreateCardFromDatabaseRow(reader);
             }
 
-            throw new InvalidOperationException("No cards found in deck");
+            return null!;
         }
 
+        /// <summary>
+        /// Transfers a card between two users' decks (used in trading)
+        /// </summary>
         public bool TransferCardBetweenDecks(int cardId, int fromUserId, int toUserId)
         {
-            using var conn = _dbHandler.GetConnection();
-            conn.Open();
-            using var transaction = conn.BeginTransaction();
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
 
             try
             {
-                // First verify the card belongs to fromUserId and is in their deck
-                using var checkCmd = conn.CreateCommand();
-                checkCmd.CommandText = @"
-                    SELECT COUNT(*) FROM cards 
-                    WHERE id = @cardId AND user_id = @fromUserId AND in_deck = true";
-                checkCmd.Parameters.AddWithValue("@cardId", cardId);
-                checkCmd.Parameters.AddWithValue("@fromUserId", fromUserId);
-
-                int count = Convert.ToInt32(checkCmd.ExecuteScalar());
-                if (count == 0)
+                // Check if card belongs to fromUser
+                if (!VerifyCardOwnership(cardId, fromUserId, connection))
                 {
-                    transaction.Rollback();
                     return false;
                 }
 
                 // Transfer the card
-                using var transferCmd = conn.CreateCommand();
-                transferCmd.CommandText = @"
-                    UPDATE cards 
-                    SET user_id = @toUserId, in_deck = true 
-                    WHERE id = @cardId";
-                transferCmd.Parameters.AddWithValue("@cardId", cardId);
-                transferCmd.Parameters.AddWithValue("@toUserId", toUserId);
+                TransferCard(cardId, toUserId, connection);
 
-                transferCmd.ExecuteNonQuery();
                 transaction.Commit();
                 return true;
             }
@@ -217,6 +252,99 @@ namespace MCTG.Data.Repositories
                 transaction.Rollback();
                 return false;
             }
+        }
+
+        private bool VerifyCardOwnership(int cardId, int userId, NpgsqlConnection connection)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM cards WHERE id = @cardId AND user_id = @userId AND in_deck = true";
+            command.Parameters.AddWithValue("@cardId", cardId);
+            command.Parameters.AddWithValue("@userId", userId);
+
+            return Convert.ToInt32(command.ExecuteScalar()) > 0;
+        }
+
+        private void TransferCard(int cardId, int newUserId, NpgsqlConnection connection)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE cards SET user_id = @newUserId, in_deck = true WHERE id = @cardId";
+            command.Parameters.AddWithValue("@cardId", cardId);
+            command.Parameters.AddWithValue("@newUserId", newUserId);
+            command.ExecuteNonQuery();
+        }
+
+        public void SetCardInDeck(int cardId, bool inDeck)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE cards SET in_deck = @inDeck WHERE id = @cardId";
+            command.Parameters.AddWithValue("@cardId", cardId);
+            command.Parameters.AddWithValue("@inDeck", inDeck);
+
+            command.ExecuteNonQuery();
+        }
+
+        // Validation Operations
+
+        /// <summary>
+        /// Gets the number of cards in a user's deck
+        /// </summary>
+        public int GetDeckCount(int userId)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM cards WHERE user_id = @userId AND in_deck = true";
+            command.Parameters.AddWithValue("@userId", userId);
+
+            return Convert.ToInt32(command.ExecuteScalar());
+        }
+
+        /// <summary>
+        /// Checks if a deck has exactly 4 cards (required for battles)
+        /// </summary>
+        public bool IsValidDeck(int userId)
+        {
+            int deckSize = GetDeckCount(userId);
+            return deckSize == MAX_CARDS_IN_DECK;
+        }
+
+        /// <summary>
+        /// Checks if a specific card is in any deck
+        /// </summary>
+        public bool IsCardInDeck(int cardId)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM cards WHERE id = @cardId AND in_deck = true";
+            command.Parameters.AddWithValue("@cardId", cardId);
+
+            return Convert.ToInt32(command.ExecuteScalar()) > 0;
+        }
+
+        // Helper Methods
+
+        /// <summary>
+        /// Determines the monster type based on the card name
+        /// </summary>
+        private MonsterType DetermineMonsterType(string cardName)
+        {
+            // Check card name for specific monster types
+            if (cardName.Contains("Goblin")) return MonsterType.Goblin;
+            if (cardName.Contains("Dragon")) return MonsterType.Dragon;
+            if (cardName.Contains("Wizard")) return MonsterType.Wizard;
+            if (cardName.Contains("Ork")) return MonsterType.Ork;
+            if (cardName.Contains("Knight")) return MonsterType.Knight;
+            if (cardName.Contains("Kraken")) return MonsterType.Kraken;
+            if (cardName.Contains("FireElf")) return MonsterType.FireElf;
+
+            // Default to Goblin if no specific type is found
+            return MonsterType.Goblin;
         }
     }
 }

@@ -4,12 +4,20 @@ namespace MCTG.Data.Interfaces
 {
     public interface ITradeRepository
     {
-        bool CreateTrade(int cardId, int userId, string type, ElementType? requiredElementType, int minimumDamage);
-        List<Trade> GetAllTrades();
+        // Basic CRUD
+        bool CreateTrade(int cardId, int userId, CardType requiredCardType,
+                        ElementType? requiredElementType, MonsterType? requiredMonsterType,
+                        int minimumDamage);
         Trade GetTradeById(int tradeId);
-        bool DeleteTrade(int tradeId);
-        bool ExecuteTrade(int tradeId, int cardId, int newOwnerId);
+        bool CancelTrade(int tradeId);
+
+        // Trade Management
+        bool ExecuteTrade(int tradeId, int offeredCardId, int newOwnerId);
+        List<Trade> GetAllActiveTrades();
         List<Trade> GetTradesByUser(int userId);
+
+        // Validation
         bool IsCardInTrade(int cardId);
+        bool ValidateTradeRequirements(int cardId, Trade trade);
     }
 }

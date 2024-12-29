@@ -19,7 +19,7 @@ namespace MCTG.PresentationLayer.Services
                 return null;
             }
 
-            return _userRepository.GetAllUsers().FirstOrDefault(u => u.AuthToken != null && u.AuthToken.Value == token && u.AuthToken.IsValid());
+            return _userRepository.GetUserByToken(token);
         }
 
         public User ValidateAndGetUser(string token, out string errorMessage)
@@ -34,9 +34,43 @@ namespace MCTG.PresentationLayer.Services
             return user;
         }
 
-        //public bool PurchasePackage(User user, List<Card> package)
-        //{
+        public User GetUserByUsername(string username)
+        {
+            return _userRepository.GetUserByUsername(username);
+        }
+
+        // public bool PurchasePackage(User user, List<Card> package)
+        // {
         //    return user.PurchasePackage(package);
-        //}
+        // }
+
+        public bool UpdateUserProfile(string username, UserProfile newProfile)
+        {
+            var user = _userRepository.GetUserByUsername(username);
+            if (user == null)
+                return false;
+
+            return _userRepository.UpdateUserProfile(user.Id, newProfile);
+        }
+
+        public List<User> GetScoreboard()
+        {
+            return _userRepository.GetScoreboard();
+        }
+
+        public bool UpdateStats(int userId, bool won)
+        {
+            return _userRepository.UpdateUserStats(userId, won);
+        }
+
+        public bool UpdateCoins(int userId, int amount)
+        {
+            return _userRepository.UpdateUserCoins(userId, amount);
+        }
+
+        public int GetCoins(int userId)
+        {
+            return _userRepository.GetUserCoins(userId);
+        }
     }
 }

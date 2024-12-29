@@ -10,9 +10,8 @@
 *.userosscache
 *.sln.docstates
 
-MCTG/.cursorrules
-MCTG/roadmap.md
-MCTG/docker-compose.yml
+MCTG/Documents/.cursorrules
+MCTG/Documents/roadmap.md
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

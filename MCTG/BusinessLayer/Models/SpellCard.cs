@@ -2,56 +2,36 @@
 
 namespace MCTG.BusinessLayer.Models
 {
+    public enum ElementType
+    {
+        Normal,
+        Fire,
+        Water
+    }
+
     public class SpellCard : Card
     {
-        public SpellCard(string name, int damage, ElementType elementType)
-            : base(name, damage, elementType, CardType.Spell)
+        public SpellCard(int id, string name, int damage, ElementType elementType)
+            : base(id, name, damage, elementType, CardType.Spell)
         {
         }
 
         public override double CalculateDamage(ICard opponent)
         {
-            // Check if the opponent iss a MonsterCard
-            if (opponent is MonsterCard)
+            // Against monsters
+            if (opponent is MonsterCard monsterCard)
             {
-                // Use a switch statement to determine damage based on element types
-                switch (ElementType)
-                {
-                    case ElementType.Water:
-                        switch (opponent.ElementType)
-                        {
-                            case ElementType.Fire:
-                                return Damage * 2; // Water is effective against Fire
-                            case ElementType.Normal:
-                                return Damage * 0.5; // Water is not effective against Normal
-                        }
-                        break;
+                // Kraken is immune to spells
+                if (monsterCard.MonsterType == MonsterType.Kraken)
+                    return 0;
 
-                    case ElementType.Fire:
-                        switch (opponent.ElementType)
-                        {
-                            case ElementType.Normal:
-                                return Damage * 2; // Fire is effective against Normal
-                            case ElementType.Water:
-                                return Damage * 0.5; // Fire is not effective against Water
-                        }
-                        break;
-
-                    case ElementType.Normal:
-                        switch (opponent.ElementType)
-                        {
-                            case ElementType.Water:
-                                return Damage * 2; // Normal is effective against Water
-                            case ElementType.Fire:
-                                return Damage * 0.5; // Normal is not effective against Fire
-                        }
-                        break;
-                }
+                // Knights drown instantly against water spells
+                if (monsterCard.MonsterType == MonsterType.Knight && ElementType == ElementType.Water)
+                    return double.MaxValue;
             }
 
-            // If none of the conditions are met, return the base damage
-            return Damage; // No Effeft
+            // Spell vs Spell or regular monster damage calculation
+            return CalculateElementalDamage(opponent.ElementType);
         }
-
     }
 }

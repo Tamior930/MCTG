@@ -5,106 +5,112 @@ namespace MCTG.PresentationLayer.Services
 {
     public class CardService
     {
+        private readonly IUserRepository _userRepository;
         private readonly ICardRepository _cardRepository;
+        private readonly IDeckRepository _deckRepository;
         private const int PACKAGE_SIZE = 5;
-        private const int PACKAGE_COST = 5;
+        private const int DECK_SIZE = 4;
 
-        private static readonly (string Name, int MinDamage, int MaxDamage)[] MONSTER_TEMPLATES = new[]
+        public CardService(IUserRepository userRepository, ICardRepository cardRepository, IDeckRepository deckRepository)
         {
-            ("Goblin", 5, 15),
-            ("Dragon", 40, 60),
-            ("Wizard", 20, 35),
-            ("Ork", 25, 45),
-            ("Knight", 20, 40),
-            ("Kraken", 35, 55),
-            ("FireElf", 15, 25)
-        };
-
-        private static readonly (string Name, int MinDamage, int MaxDamage)[] SPELL_TEMPLATES = new[]
-        {
-            ("WaterSpell", 20, 40),
-            ("FireSpell", 25, 45),
-            ("RegularSpell", 15, 35)
-        };
-
-        public CardService(ICardRepository cardRepository)
-        {
+            _userRepository = userRepository;
             _cardRepository = cardRepository;
+            _deckRepository = deckRepository;
         }
 
         public List<Card> CreateRandomPackage()
         {
-            var package = new List<Card>();
-            var random = new Random();
-
-            for (int i = 0; i < PACKAGE_SIZE; i++)
-            {
-                // 60% chance for monster, 40% for spell
-                bool isMonster = random.Next(100) < 60;
-                var template = isMonster 
-                    ? MONSTER_TEMPLATES[random.Next(MONSTER_TEMPLATES.Length)]
-                    : SPELL_TEMPLATES[random.Next(SPELL_TEMPLATES.Length)];
-
-                var elementType = (ElementType)random.Next(3); // 0=Fire, 1=Water, 2=Normal
-                var damage = random.Next(template.MinDamage, template.MaxDamage + 1);
-
-                Card card = isMonster
-                    ? new MonsterCard(template.Name, damage, elementType)
-                    : new SpellCard(template.Name, damage, elementType);
-
-                package.Add(card);
-            }
-
-            return package;
+            return _cardRepository.GetRandomCardsForPackage(PACKAGE_SIZE);
         }
 
-        public List<Card> GetCardsByIds(List<string> cardIds)
+        public string PurchasePackage(string authToken)
         {
-            var cards = new List<Card>();
-            foreach (var idString in cardIds)
+            // Get user from database
+            var user = _userRepository.GetUserByToken(authToken);
+            if (user == null)
+                return "Error: User not found";
+
+            if (!user.HasValidToken())
+                return "Error: Invalid token";
+
+            if (!user.CanAffordPackage())
+                return "Error: Insufficient coins";
+
+            // Get random cards for package
+            var package = _cardRepository.GetRandomCardsForPackage(PACKAGE_SIZE);
+            if (package.Count != PACKAGE_SIZE)
+                return "Error: Failed to create package";
+
+            // Use domain logic to attempt purchase
+            if (user.PurchasePackage(package))
             {
-                if (int.TryParse(idString, out int cardId))
+                // If successful, persist changes to database
+                _userRepository.UpdateUserCoins(user.Id, -5);
+                foreach (var card in package)
                 {
-                    var card = _cardRepository.GetCardById(cardId);
-                    if (card != null)
-                    {
-                        cards.Add(card);
-                    }
+                    _cardRepository.AddCard(card, user.Id);
                 }
+                return "Package purchased successfully!";
             }
-            return cards;
+
+            return "Error: Failed to purchase package";
         }
 
-        public bool IsCardAvailableForTrade(int cardId, int userId)
+        public List<Card> GetUserCards(string authToken)
         {
-            var card = _cardRepository.GetCardById(cardId);
-            return card != null && !_cardRepository.IsCardInDeck(cardId);
+            var user = _userRepository.GetUserByToken(authToken);
+            if (user == null || !user.HasValidToken())
+                return new List<Card>();
+
+            return _cardRepository.GetAllCardsForUser(user.Id);
         }
 
-        public bool AssignCardsToUser(List<Card> cards, int userId)
+        public List<Card> GetUserDeck(string authToken)
         {
+            var user = _userRepository.GetUserByToken(authToken);
+            if (user == null || !user.HasValidToken())
+                return new List<Card>();
+
+            return _cardRepository.GetDeckCards(user.Id);
+        }
+
+        public string ConfigureDeck(string authToken, List<int> cardIds)
+        {
+            var user = _userRepository.GetUserByToken(authToken);
+            if (user == null)
+                return "Error: User not found";
+
+            if (!user.HasValidToken())
+                return "Error: Invalid token";
+
+            if (cardIds.Count != DECK_SIZE)
+                return "Error: Deck must contain exactly 4 cards";
+
+            var cards = _cardRepository.GetCardsByIds(cardIds);
+            if (cards.Count != DECK_SIZE)
+                return "Error: One or more cards not found";
+
+            // Verify all cards belong to user
+            foreach (var card in cards)
+            {
+                if (!_cardRepository.ValidateCardOwnership(card.Id, user.Id))
+                    return $"Error: Card {card.Name} is not in your stack";
+            }
+
             try
             {
-                foreach (var card in cards)
-                {
-                    _cardRepository.AddCard(card, userId);
-                }
-                return true;
+                _deckRepository.SaveDeck(user.Id, cards);
+                return "Deck configured successfully!";
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return $"Error configuring deck: {ex.Message}";
             }
         }
 
-        public static int GetPackageCost()
+        public Card GetCardById(int cardId)
         {
-            return PACKAGE_COST;
-        }
-
-        public static int GetPackageSize()
-        {
-            return PACKAGE_SIZE;
+            return _cardRepository.GetCardById(cardId);
         }
     }
 }

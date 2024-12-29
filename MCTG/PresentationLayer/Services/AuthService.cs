@@ -24,17 +24,43 @@ namespace MCTG.PresentationLayer.Services
             return true; // Registration successful
         }
 
-        // Checks Login if OK and then assigns the token to the User
         public Token Login(string username, string password)
         {
             User user = _userRepository.GetUserByUsername(username);
             if (user != null && user.Password == password)
             {
-                Token token = Token.GenerateToken();
+                // Generate new token
+                string tokenValue = Guid.NewGuid().ToString();
+                DateTime expiryTime = DateTime.Now.AddHours(1);
+                var token = new Token(tokenValue, expiryTime);
+
+                // Assign token to user
                 user.AssignToken(token);
-                return token;
+
+                // Persist token to database
+                if (_userRepository.UpdateUserToken(user.Id, token))
+                {
+                    return token;
+                }
             }
             return null;
+        }
+
+        public bool Logout(string authToken)
+        {
+            if (string.IsNullOrEmpty(authToken))
+            {
+                return false;
+            }
+
+            var user = _userRepository.GetUserByToken(authToken);
+            if (user != null)
+            {
+                // Create expired token
+                var expiredToken = new Token(authToken, DateTime.Now.AddSeconds(-1));
+                return _userRepository.UpdateUserToken(user.Id, expiredToken);
+            }
+            return false;
         }
     }
 }

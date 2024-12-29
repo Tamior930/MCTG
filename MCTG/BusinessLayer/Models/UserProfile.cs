@@ -13,4 +13,4 @@ namespace MCTG.BusinessLayer.Models
             Image = image;
         }
     }
-} 
+}
