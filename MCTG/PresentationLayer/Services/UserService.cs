@@ -12,45 +12,23 @@ namespace MCTG.PresentationLayer.Services
             _userRepository = userRepository;
         }
 
-        public User GetUserByToken(string token)
+        public User GetUserByToken(string authToken)
         {
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(authToken))
             {
                 return null;
             }
 
-            return _userRepository.GetUserByToken(token);
+            return _userRepository.GetUserByToken(authToken);
         }
 
-        public User ValidateAndGetUser(string token, out string errorMessage)
+        public bool UpdateUserProfile(string authToken, UserProfile newProfile)
         {
-            var user = GetUserByToken(token);
-            if (user == null)
-            {
-                errorMessage = "Error: User not found or invalid token.";
-                return null;
-            }
-            errorMessage = null;
-            return user;
-        }
-
-        public User GetUserByUsername(string username)
-        {
-            return _userRepository.GetUserByUsername(username);
-        }
-
-        // public bool PurchasePackage(User user, List<Card> package)
-        // {
-        //    return user.PurchasePackage(package);
-        // }
-
-        public bool UpdateUserProfile(string username, UserProfile newProfile)
-        {
-            var user = _userRepository.GetUserByUsername(username);
+            var user = _userRepository.GetUserByToken(authToken);
             if (user == null)
                 return false;
 
-            return _userRepository.UpdateUserProfile(user.Id, newProfile);
+            return _userRepository.UpdateUserProfile(authToken, newProfile);
         }
 
         public List<User> GetScoreboard()
@@ -58,19 +36,9 @@ namespace MCTG.PresentationLayer.Services
             return _userRepository.GetScoreboard();
         }
 
-        public bool UpdateStats(int userId, bool won)
+        public bool UpdateStats(string authToken, bool won)
         {
-            return _userRepository.UpdateUserStats(userId, won);
-        }
-
-        public bool UpdateCoins(int userId, int amount)
-        {
-            return _userRepository.UpdateUserCoins(userId, amount);
-        }
-
-        public int GetCoins(int userId)
-        {
-            return _userRepository.GetUserCoins(userId);
+            return _userRepository.UpdateUserStats(authToken, won);
         }
     }
 }

@@ -7,14 +7,10 @@ namespace MCTG.Data.Repositories
     public class TradeRepository : ITradeRepository
     {
         private readonly DatabaseHandler _databaseHandler;
-        private readonly IDeckRepository _deckRepository;
-        private readonly ICardRepository _cardRepository;
 
-        public TradeRepository(IDeckRepository deckRepository, ICardRepository cardRepository)
+        public TradeRepository()
         {
             _databaseHandler = new DatabaseHandler();
-            _deckRepository = deckRepository;
-            _cardRepository = cardRepository;
         }
 
         // Basic CRUD Operations
@@ -326,6 +322,40 @@ namespace MCTG.Data.Repositories
                 transaction.Rollback();
                 throw new Exception($"Failed to delete trade {tradeId}: {ex.Message}");
             }
+        }
+
+        public List<Trade> GetAllTrades()
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+
+            command.CommandText = "SELECT * FROM trades WHERE status = 'ACTIVE'";
+            var trades = new List<Trade>();
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                trades.Add(CreateTradeFromDatabaseRow(reader));
+            }
+            return trades;
+        }
+
+        public bool CreateTrade(Trade trade)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+
+            command.CommandText = @"
+                INSERT INTO trades (card_id, user_id, required_type, minimum_damage, status) 
+                VALUES (@cardId, @userId, @type, @minDamage, 'ACTIVE')";
+
+            command.Parameters.AddWithValue("@cardId", trade.CardId);
+            command.Parameters.AddWithValue("@userId", trade.UserId);
+            command.Parameters.AddWithValue("@type", trade.RequiredType);
+            command.Parameters.AddWithValue("@minDamage", trade.MinimumDamage);
+
+            return command.ExecuteNonQuery() > 0;
         }
     }
 }

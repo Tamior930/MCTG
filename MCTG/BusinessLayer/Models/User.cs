@@ -1,39 +1,24 @@
 ﻿namespace MCTG.BusinessLayer.Models
 {
-    public class User
+    public class User(string username, string password)
     {
         private const int STARTING_COINS = 20;
         private const int STARTING_ELO = 100;
         private const int PACKAGE_COST = 5;
         private const int ELO_WIN_BONUS = 3;
         private const int ELO_LOSS_PENALTY = 5;
-        private const int MAX_BATTLE_ROUNDS = 100;
 
-        public int Id { get; private set; }
-        public string Username { get; private set; }
-        public string Password { get; private set; }
-        public int Coins { get; private set; }
-        public Stack Stack { get; private set; }
-        public Deck Deck { get; private set; }
-        public Token? AuthToken { get; private set; }
-        public int ELO { get; private set; }
-        public int Wins { get; private set; }
-        public int Losses { get; private set; }
-        public UserProfile Profile { get; private set; }
-
-        public User(string username, string password)
-        {
-            Id = -1;
-            Username = username;
-            Password = password;
-            Coins = STARTING_COINS;
-            ELO = STARTING_ELO;
-            Wins = 0;
-            Losses = 0;
-            Stack = new Stack();
-            Deck = new Deck();
-            Profile = new UserProfile(username, "", "");
-        }
+        public int Id { get; private set; } = -1;
+        public string Username { get; private set; } = username;
+        public string Password { get; private set; } = password;
+        public int Coins { get; private set; } = STARTING_COINS;
+        public Stack Stack { get; private set; } = new();
+        public Deck Deck { get; private set; } = new();
+        public Token AuthToken { get; private set; }
+        public int ELO { get; private set; } = STARTING_ELO;
+        public int Wins { get; private set; } = 0;
+        public int Losses { get; private set; } = 0;
+        public UserProfile Profile { get; private set; } = new("", "");
 
         public void SetId(int id)
         {
@@ -100,12 +85,6 @@
         public bool CanTrade(Card card)
         {
             return Stack.IsCardAvailableForTrade(card, Deck);
-        }
-
-        public double GetWinRate()
-        {
-            int totalGames = Wins + Losses;
-            return totalGames > 0 ? (double)Wins / totalGames : 0;
         }
 
         public void UpdateStats(int coins, int elo, int wins, int losses)

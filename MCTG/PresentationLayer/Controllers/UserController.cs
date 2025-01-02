@@ -3,150 +3,161 @@ using MCTG.PresentationLayer.Services;
 
 namespace MCTG.PresentationLayer.Controller
 {
-    public class UserController
+    public class UserController : BaseController
     {
-        private readonly UserService _userService;
-        private readonly CardService _cardService;
         private readonly AuthService _authService;
-
-        public UserController(UserService userService, CardService cardService, AuthService authService)
+        private readonly CardService _cardService;
+        public UserController(UserService userService, AuthService authService, CardService cardService) : base(userService)
         {
-            _userService = userService;
-            _cardService = cardService;
             _authService = authService;
+            _cardService = cardService;
         }
 
-        public string Register(string username, string password)
+        public string Register(string body)
         {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
-                return "Error: Username and password cannot be empty";
+            var credentials = DeserializeBody<Dictionary<string, string>>(body, out var error);
+            if (credentials == null)
+                return CreateResponse(400, error);
 
-            if (_authService.Register(username, password))
-                return "Registration successful";
+            if (!credentials.TryGetValue("Username", out var username) ||
+                !credentials.TryGetValue("Password", out var password) ||
+                string.IsNullOrEmpty(username) ||
+                string.IsNullOrEmpty(password))
+            {
+                return CreateResponse(400, "Username and password are required");
+            }
 
-            return "Error: Username already exists";
+            return _authService.Register(username, password)
+                ? CreateResponse(201, "Registration successful")
+                : CreateResponse(409, "Username already exists");
         }
 
-        public string Login(string username, string password)
+        public string Login(string body)
         {
+            var credentials = DeserializeBody<Dictionary<string, string>>(body, out var error);
+            if (credentials == null)
+                return CreateResponse(400, error);
+
+            if (!credentials.TryGetValue("Username", out var username) ||
+                !credentials.TryGetValue("Password", out var password) ||
+                string.IsNullOrEmpty(username) ||
+                string.IsNullOrEmpty(password))
+            {
+                return CreateResponse(400, "Username and password are required");
+            }
+
             var token = _authService.Login(username, password);
-            if (token != null)
-                return $"Login successful. Token: {token.Value}";
-
-            return "Error: Invalid username/password combination";
+            return token != null
+                ? CreateResponse(200, $"Login successful. Token: {token.Value}")
+                : CreateResponse(401, "Invalid username/password combination");
         }
 
         public string Logout(string authToken)
         {
-            if (_authService.Logout(authToken))
-                return "Logout successful";
+            var (user, error) = AuthenticateUser(authToken);
+            if (user == null)
+                return error;
 
-            return "Error: Invalid token or user not found";
+            return _authService.Logout(authToken)
+                ? CreateResponse(200, "Logout successful")
+                : CreateResponse(400, "Logout failed");
         }
 
         public string GetUserData(string authToken, string username)
         {
-            var user = _userService.ValidateAndGetUser(authToken, out var error);
+            var (user, error) = AuthenticateUser(authToken);
             if (user == null)
                 return error;
 
             if (user.Username != username && !user.Username.Equals("admin"))
-                return "Error: Access denied. You can only view your own data.";
+                return CreateResponse(403, "Access denied. You can only view your own data.");
 
-            var targetUser = _userService.GetUserByUsername(username);
+            var targetUser = _userService.GetUserByToken(authToken);
             if (targetUser == null)
-                return "Error: User not found";
+                return CreateResponse(404, "User not found");
 
-            return $"User Data for {targetUser.Username}:\n" +
-                   $"Name: {targetUser.Profile.Name}\n" +
-                   $"Bio: {targetUser.Profile.Bio}\n" +
-                   $"Image: {targetUser.Profile.Image}";
-        }
+            var userData = new
+            {
+                targetUser.Username,
+                Profile = new
+                {
+                    targetUser.Profile.Bio,
+                    targetUser.Profile.Image
+                },
+                targetUser.ELO,
+                targetUser.Wins,
+                targetUser.Losses,
+                targetUser.Coins,
+                StackSize = targetUser.GetStackSize(),
+                Deck = _cardService.GetUserDeck(targetUser.Id)
+            };
 
-        public string UpdateUserProfile(string authToken, string username, UserProfile newProfile)
-        {
-            var user = _userService.ValidateAndGetUser(authToken, out var error);
-            if (user == null)
-                return error;
-
-            if (user.Username != username && !user.Username.Equals("admin"))
-                return "Error: Access denied. You can only update your own profile.";
-
-            if (_userService.UpdateUserProfile(username, newProfile))
-                return "Profile updated successfully";
-
-            return "Error: Failed to update profile";
+            return CreateResponse(200, SerializeResponse(userData));
         }
 
         public string GetUserStats(string authToken)
         {
-            var user = _userService.ValidateAndGetUser(authToken, out var error);
+            var (user, error) = AuthenticateUser(authToken);
             if (user == null)
                 return error;
 
-            return $"User Stats for {user.Username}:\n" +
-                   $"ELO: {user.ELO}\n" +
-                   $"Wins: {user.Wins}\n" +
-                   $"Losses: {user.Losses}\n" +
-                   $"Win Rate: {user.GetWinRate():P2}\n" +
-                   $"Coins: {user.Coins}\n" +
-                   $"Cards in Stack: {user.GetStackSize()}";
+            var stats = new
+            {
+                user.Username,
+                user.ELO,
+                user.Wins,
+                user.Losses,
+                user.Coins,
+                StackSize = user.GetStackSize()
+            };
+
+            return CreateResponse(200, SerializeResponse(stats));
         }
 
         public string GetScoreboard(string authToken)
         {
-            var user = _userService.ValidateAndGetUser(authToken, out var error);
+            var (user, error) = AuthenticateUser(authToken);
             if (user == null)
                 return error;
 
-            var scoreboard = _userService.GetScoreboard();
-            if (!scoreboard.Any())
-                return "No users found in scoreboard";
+            var scoreboard = _userService.GetScoreboard()
+                .Select((player, index) => new
+                {
+                    Rank = index + 1,
+                    player.Username,
+                    player.ELO,
+                    WinLoss = $"{player.Wins}/{player.Losses}",
+                })
+                .ToList();
 
-            var result = "=== SCOREBOARD ===\n";
-            int rank = 1;
-            foreach (var player in scoreboard)
-            {
-                result += $"{rank}. {player.Username} - ELO: {player.ELO}, W/L: {player.Wins}/{player.Losses}\n";
-                rank++;
-            }
-            return result;
+            return CreateResponse(200, SerializeResponse(scoreboard));
         }
 
-        public string GetUserCards(string authToken)
+        public string UpdateUserData(string authToken, string username, string requestBody)
         {
-            var user = _userService.ValidateAndGetUser(authToken, out var error);
+            var (user, error) = AuthenticateUser(authToken);
             if (user == null)
-                return error;
-
-            var cards = _cardService.GetUserCards(authToken);
-            if (!cards.Any())
-                return "No cards found in your stack";
-
-            var result = "=== YOUR CARDS ===\n";
-            foreach (var card in cards)
             {
-                result += $"{card.Name} - Damage: {card.Damage}, Type: {card.Type}\n";
-            }
-            return result;
-        }
-
-        public string GetUserDeck(string authToken)
-        {
-            var user = _userService.ValidateAndGetUser(authToken, out var error);
-            if (user == null)
                 return error;
-
-            var deck = _cardService.GetUserDeck(authToken);
-            if (!deck.Any())
-                return "No cards found in your deck";
-
-            var result = "=== YOUR DECK ===\n";
-            foreach (var card in deck)
-            {
-                result += $"{card.Name} - Damage: {card.Damage}, Type: {card.Type}\n";
             }
-            return result;
+
+            if (user.Username != username && !user.Username.Equals("admin"))
+                return CreateResponse(403, "Access denied. You can only update your own profile.");
+
+            try
+            {
+                var profile = DeserializeBody<UserProfile>(requestBody, out error);
+                if (profile == null)
+                    return CreateResponse(400, error);
+
+                return _userService.UpdateUserProfile(authToken, profile)
+                    ? CreateResponse(200, "User data updated successfully")
+                    : CreateResponse(404, "User not found");
+            }
+            catch (Exception ex)
+            {
+                return CreateResponse(400, ex.Message);
+            }
         }
     }
 }

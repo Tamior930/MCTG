@@ -1,36 +1,63 @@
-﻿using MCTG.BusinessLayer.Controller;
+﻿using MCTG.BusinessLayer.Models;
 using MCTG.PresentationLayer.Services;
 
 namespace MCTG.PresentationLayer.Controller
 {
-    public class BattleController
+    public class BattleController : BaseController
     {
-        private readonly BattleManager _battleManager;
-        private readonly UserService _userService;
+        private readonly BattleService _battleService;
 
-        public BattleController(BattleManager battleManager, UserService userService)
+        public BattleController(BattleService battleService, UserService userService)
+            : base(userService)
         {
-            _battleManager = battleManager;
-            _userService = userService;
+            _battleService = battleService;
         }
 
-        public string HandleBattleRequest(string authToken, string opponentUsername)
+        public string HandleBattleRequest(string authToken)
         {
-            // Get users from token and username
-            var player1 = _userService.GetUserByToken(authToken);
-            var player2 = _userService.GetUserByUsername(opponentUsername);
+            var (user, error) = AuthenticateUser(authToken);
+            if (user == null)
+                return error;
 
-            if (player1 == null || player2 == null)
+            try
             {
-                return "Error: One or both players not found.";
-            }
+                if (!user.HasValidDeckSize())
+                    return CreateResponse(400, "Your deck must contain exactly 4 cards.");
 
-            if (!player1.HasValidDeckSize() || !player2.HasValidDeckSize())
+                var opponent = _battleService.FindOpponent(user.Id);
+                if (opponent == null)
+                {
+                    _battleService.AddUserToQueue(user);
+                    return CreateResponse(200, "Waiting for opponent...");
+                }
+
+                var battleResult = _battleService.ExecuteBattle(user, opponent);
+                UpdateBattleStats(user, opponent, battleResult);
+
+                return CreateResponse(200, battleResult.BattleLog);
+            }
+            catch (Exception ex)
             {
-                return "Error: Both players must have exactly 4 cards in their deck.";
+                return CreateResponse(500, $"Battle error: {ex.Message}");
             }
+        }
 
-            return _battleManager.ExecuteBattle(player1, player2);
+        private void UpdateBattleStats(User player1, User player2, BattleResult result)
+        {
+            switch (result.Winner)
+            {
+                case BattleWinner.Player1:
+                    _userService.UpdateStats(player1.Id, true);  // Win
+                    _userService.UpdateStats(player2.Id, false); // Loss
+                    break;
+                case BattleWinner.Player2:
+                    _userService.UpdateStats(player1.Id, false); // Loss
+                    _userService.UpdateStats(player2.Id, true);  // Win
+                    break;
+                case BattleWinner.Draw:
+                    // No ELO changes on draw
+                    break;
+            }
         }
     }
 }

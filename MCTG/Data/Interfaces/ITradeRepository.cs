@@ -19,5 +19,8 @@ namespace MCTG.Data.Interfaces
         // Validation
         bool IsCardInTrade(int cardId);
         bool ValidateTradeRequirements(int cardId, Trade trade);
+
+        List<Trade> GetAllTrades();
+        bool CreateTrade(Trade trade);
     }
 }

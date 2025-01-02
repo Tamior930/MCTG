@@ -8,109 +8,128 @@ namespace MCTG.PresentationLayer.Services
         private readonly IUserRepository _userRepository;
         private readonly ICardRepository _cardRepository;
         private readonly IDeckRepository _deckRepository;
+        private readonly ITradeRepository _tradeRepository;
         private const int PACKAGE_SIZE = 5;
         private const int DECK_SIZE = 4;
+        private const int PACKAGE_COST = 5;
 
-        public CardService(IUserRepository userRepository, ICardRepository cardRepository, IDeckRepository deckRepository)
+        public CardService(IUserRepository userRepository, ICardRepository cardRepository,
+            IDeckRepository deckRepository, ITradeRepository tradeRepository)
         {
+            _tradeRepository = tradeRepository;
             _userRepository = userRepository;
             _cardRepository = cardRepository;
             _deckRepository = deckRepository;
         }
 
-        public List<Card> CreateRandomPackage()
+        // Package Management
+        public string PurchasePackage(User user)
         {
-            return _cardRepository.GetRandomCardsForPackage(PACKAGE_SIZE);
-        }
-
-        public string PurchasePackage(string authToken)
-        {
-            // Get user from database
-            var user = _userRepository.GetUserByToken(authToken);
             if (user == null)
                 return "Error: User not found";
 
-            if (!user.HasValidToken())
-                return "Error: Invalid token";
-
-            if (!user.CanAffordPackage())
+            if (user.Coins < PACKAGE_COST)
                 return "Error: Insufficient coins";
 
-            // Get random cards for package
             var package = _cardRepository.GetRandomCardsForPackage(PACKAGE_SIZE);
             if (package.Count != PACKAGE_SIZE)
                 return "Error: Failed to create package";
 
-            // Use domain logic to attempt purchase
-            if (user.PurchasePackage(package))
+            try
             {
-                // If successful, persist changes to database
-                _userRepository.UpdateUserCoins(user.Id, -5);
-                foreach (var card in package)
+                // Execute purchase transaction
+                if (_userRepository.UpdateUserCoins(user.Id, -PACKAGE_COST))
                 {
-                    _cardRepository.AddCard(card, user.Id);
+                    foreach (var card in package)
+                    {
+                        _cardRepository.AddCard(card, user.Id);
+                    }
+                    return $"Package purchased successfully! Added {PACKAGE_SIZE} cards to your stack.";
                 }
-                return "Package purchased successfully!";
+                return "Error: Failed to process payment";
             }
-
-            return "Error: Failed to purchase package";
+            catch (Exception ex)
+            {
+                return $"Error: Transaction failed - {ex.Message}";
+            }
         }
 
-        public List<Card> GetUserCards(string authToken)
+        // Card Management
+        public List<Card> GetUserCards(int userId)
         {
-            var user = _userRepository.GetUserByToken(authToken);
-            if (user == null || !user.HasValidToken())
+            try
+            {
+                return _cardRepository.GetAllCardsForUser(userId);
+            }
+            catch
+            {
                 return new List<Card>();
-
-            return _cardRepository.GetAllCardsForUser(user.Id);
+            }
         }
 
-        public List<Card> GetUserDeck(string authToken)
+        public List<Card> GetUserDeck(int userId)
         {
-            var user = _userRepository.GetUserByToken(authToken);
-            if (user == null || !user.HasValidToken())
+            try
+            {
+                return _cardRepository.GetDeckCards(userId);
+            }
+            catch
+            {
                 return new List<Card>();
-
-            return _cardRepository.GetDeckCards(user.Id);
+            }
         }
 
-        public string ConfigureDeck(string authToken, List<int> cardIds)
+        public string ConfigureDeck(int userId, List<int> cardIds)
         {
-            var user = _userRepository.GetUserByToken(authToken);
-            if (user == null)
-                return "Error: User not found";
-
-            if (!user.HasValidToken())
-                return "Error: Invalid token";
-
-            if (cardIds.Count != DECK_SIZE)
+            if (cardIds == null || cardIds.Count != DECK_SIZE)
                 return "Error: Deck must contain exactly 4 cards";
 
             var cards = _cardRepository.GetCardsByIds(cardIds);
             if (cards.Count != DECK_SIZE)
                 return "Error: One or more cards not found";
 
-            // Verify all cards belong to user
+            // Verify card ownership
             foreach (var card in cards)
             {
-                if (!_cardRepository.ValidateCardOwnership(card.Id, user.Id))
+                if (!_cardRepository.ValidateCardOwnership(card.Id, userId))
                     return $"Error: Card {card.Name} is not in your stack";
             }
 
             try
             {
-                _deckRepository.SaveDeck(user.Id, cards);
+                _deckRepository.SaveDeck(userId, cards);
                 return "Deck configured successfully!";
             }
             catch (Exception ex)
             {
-                return $"Error configuring deck: {ex.Message}";
+                return $"Error: Failed to configure deck - {ex.Message}";
             }
         }
 
-        public Card GetCardById(int cardId)
-        {
-            return _cardRepository.GetCardById(cardId);
-        }
+        // public List<Trade> GetTradingDeals()
+        // {
+        //     return _tradeRepository.GetAllTrades();
+        // }
+
+        // public string CreateTradingDeal(int userId, TradingDeal tradingDeal)
+        // {
+        //     if (!_cardRepository.ValidateCardOwnership(tradingDeal.CardToTrade, userId))
+        //         return "Error: Card not in user's stack";
+
+        //     if (_cardRepository.IsCardInDeck(tradingDeal.CardToTrade))
+        //         return "Error: Card is in deck";
+
+        //     var trade = new Trade
+        //     {
+        //         CardId = tradingDeal.CardToTrade,
+        //         UserId = userId,
+        //         MinimumDamage = tradingDeal.MinimumDamage,
+        //         RequiredType = tradingDeal.Type
+        //     };
+
+        //     return _tradeRepository.CreateTrade(trade)
+        //         ? "Trading deal created successfully"
+        //         : "Error: Failed to create trading deal";
+        // }
     }
 }

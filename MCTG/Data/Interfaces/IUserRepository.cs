@@ -6,23 +6,20 @@ namespace MCTG.Data.Interfaces
     {
         // Basic CRUD
         void AddUser(User user);
-        User GetUserById(int userId);
         User GetUserByToken(string authToken);
-        User GetUserByUsername(string username);
-        bool UpdateUserProfile(int userId, UserProfile profile);
+        bool UpdateUserProfile(string authToken, UserProfile profile);
+        // User MapUserFromDatabase(NpgsqlDataReader reader);
 
         // User Stats and Currency
-        bool UpdateUserStats(int userId, bool won);
+        bool UpdateUserStats(string authToken, bool won);
         bool UpdateUserCoins(int userId, int amount);
-        int GetUserCoins(int userId);
+        //int GetUserCoins(string authToken);
 
         // User Lists and Rankings
-        List<User> GetAllUsers();
         List<User> GetScoreboard();
 
         // Validation
         bool UserExists(string username);
-        bool HasEnoughCoins(int userId, int requiredAmount);
         bool UpdateUserToken(int userId, Token token);
     }
 }
