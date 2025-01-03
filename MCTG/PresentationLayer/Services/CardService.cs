@@ -36,10 +36,11 @@ namespace MCTG.PresentationLayer.Services
             {
                 if (_userRepository.UpdateUserCoins(user.Id, -PACKAGE_COST))
                 {
+                    user.UpdateCoins(-PACKAGE_COST);
                     foreach (var card in package)
                     {
                         user.Stack.AddCard(card);
-                        _cardRepository.AddCard(card, user.Id);
+                        _cardRepository.UpdateCardOwnership(card, user.Id);
                     }
                     return $"Package purchased successfully!";
                 }
@@ -86,7 +87,7 @@ namespace MCTG.PresentationLayer.Services
                 }
                 // Update in-memory deck
                 user.Deck.SetDeck(userDeck);
-                
+
                 return "Deck configured successfully";
             }
             catch (Exception ex)

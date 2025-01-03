@@ -18,7 +18,7 @@ namespace MCTG.Data.Repositories
         /// <summary>
         /// Adds a new card to a user's collection
         /// </summary>
-        public void AddCard(Card card, int userId)
+        public void UpdateCardOwnership(Card card, int userId)
         {
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
@@ -27,7 +27,7 @@ namespace MCTG.Data.Repositories
             command.CommandText = "UPDATE cards SET user_id = @userId WHERE id = @cardId";
             command.Parameters.AddWithValue("@userId", userId);
             command.Parameters.AddWithValue("@cardId", card.Id);
-            
+
             command.ExecuteNonQuery();
         }
 
@@ -121,7 +121,7 @@ namespace MCTG.Data.Repositories
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT * FROM cards WHERE user_id = @userId";
             command.Parameters.AddWithValue("@userId", userId);
-            
+
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -130,25 +130,6 @@ namespace MCTG.Data.Repositories
             return userCards;
         }
 
-        /// <summary>
-        /// Gets all cards in a user's deck
-        /// </summary>
-        public List<Card> GetDeckCards(int userId)
-        {
-            var deckCards = new List<Card>();
-            using var connection = _databaseHandler.GetConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = "SELECT * FROM cards WHERE user_id = @userId AND in_deck = true";
-            command.Parameters.AddWithValue("@userId", userId);
-            
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                deckCards.Add(CreateCardFromDatabaseRow(reader));
-            }
-            return deckCards;
-        }
 
         /// <summary>
         /// Gets random cards for creating a new package
@@ -156,10 +137,10 @@ namespace MCTG.Data.Repositories
         public List<Card> GetRandomCardsForPackage(int count)
         {
             var cards = new List<Card>();
-            
+
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
-            
+
             using var command = connection.CreateCommand();
             command.CommandText = @"
                 SELECT * FROM cards 
@@ -167,13 +148,13 @@ namespace MCTG.Data.Repositories
                 ORDER BY RANDOM() 
                 LIMIT @count";
             command.Parameters.AddWithValue("@count", count);
-            
+
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
                 cards.Add(CreateCardFromDatabaseRow(reader));
             }
-            
+
             return cards;
         }
 
@@ -275,25 +256,10 @@ namespace MCTG.Data.Repositories
         /// <summary>
         /// Checks if a user owns a specific card
         /// </summary>
-        // public bool ValidateCardOwnership(int cardId, int userId)
-        // {
-        //     using var connection = _databaseHandler.GetConnection();
-        //     connection.Open();
-
-        //     using var command = connection.CreateCommand();
-        //     command.CommandText = "SELECT COUNT(*) FROM cards WHERE id = @cardId AND user_id = @userId";
-        //     command.Parameters.AddWithValue("@cardId", cardId);
-        //     command.Parameters.AddWithValue("@userId", userId);
-
-        //     try
-        //     {
-        //         return Convert.ToInt32(command.ExecuteScalar()) > 0;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new Exception($"Failed to validate card ownership: {ex.Message}");
-        //     }
-        // }
+        public bool ValidateCardOwnership(int cardId, int userId)
+        {
+            throw new NotImplementedException();
+        }
 
         // Helper Methods
 

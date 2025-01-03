@@ -19,10 +19,10 @@ namespace MCTG.Data.Repositories
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
             using var command = connection.CreateCommand();
-            
+
             command.CommandText = "SELECT * FROM cards WHERE user_id = @userId AND in_deck = true";
             command.Parameters.AddWithValue("@userId", userId);
-            
+
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -80,6 +80,19 @@ namespace MCTG.Data.Repositories
                 transaction.Rollback();
                 return false;
             }
+        }
+
+        public bool IsCardInDeck(int cardId)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+
+            command.CommandText = "SELECT in_deck FROM cards WHERE id = @cardId";
+            command.Parameters.AddWithValue("@cardId", cardId);
+
+            using var reader = command.ExecuteReader();
+            return reader.Read() && reader.GetBoolean(0);
         }
     }
 }

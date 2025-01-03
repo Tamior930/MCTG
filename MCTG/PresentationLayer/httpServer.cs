@@ -22,6 +22,7 @@ namespace MCTG.PresentationLayer
         private readonly BattleController _battleController;
         private readonly CardController _cardController;
         private readonly UserService _userService;
+        private readonly TradingController _tradingController;
 
         // Thread management
         private readonly List<Thread> _clientThreads;
@@ -49,12 +50,15 @@ namespace MCTG.PresentationLayer
             UserService userService = new UserService(userRepository);
             CardService cardService = new CardService(userRepository, cardRepository, deckRepository, tradeRepository);
             BattleService battleService = new BattleService(userRepository, deckRepository);
+            TradingService tradingService = new TradingService(tradeRepository, cardRepository, deckRepository);
 
             // Initialize controllers
             _authController = new AuthController(authService, userService);
             _userController = new UserController(userService, authService, cardService);
             _battleController = new BattleController(battleService, userService);
             _cardController = new CardController(cardService, userService);
+            _tradingController = new TradingController(tradingService, userService);
+
 
             // Store UserService instance
             _userService = userService;
@@ -304,15 +308,15 @@ namespace MCTG.PresentationLayer
                     case ("/deck", "PUT"):
                         return CreateHttpResponse(_cardController.ConfigureDeck(authToken, request.Body));
 
-                    // // Trading
-                    // case ("/tradings", "GET"):
-                    //     return CreateHttpResponse(_tradeController.GetTradingDeals(authToken));
-                    // case ("/tradings", "POST"):
-                    //     return CreateHttpResponse(_tradeController.CreateTradingDeal(authToken, request.Body));
-                    // case ("/tradings/{tradingId}", "DELETE"):
-                    //     return CreateHttpResponse(_tradeController.DeleteTradingDeal(authToken, GetTradingIdFromPath(request.Path)));
-                    // case ("/tradings/{tradingId}", "POST"):
-                    //     return CreateHttpResponse(_tradeController.ExecuteTrade(authToken, GetTradingIdFromPath(request.Path), request.Body));
+                    // Trading
+                    case ("/tradings", "GET"):
+                        return CreateHttpResponse(_tradingController.GetTradingDeals(authToken));
+                    case ("/tradings", "POST"):
+                        return CreateHttpResponse(_tradingController.CreateTradingDeal(authToken, request.Body));
+                    case ("/tradings/{tradingId}", "DELETE"):
+                        return CreateHttpResponse(_tradingController.DeleteTradingDeal(authToken, GetTradingIdFromPath(request.Path)));
+                    case ("/tradings/{tradingId}", "POST"):
+                        return CreateHttpResponse(_tradingController.ExecuteTrade(authToken, GetTradingIdFromPath(request.Path), request.Body));
 
                     // // Battle
                     // case ("/battles", "POST"):

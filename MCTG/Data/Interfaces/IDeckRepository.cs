@@ -6,5 +6,6 @@ namespace MCTG.Data.Interfaces
     {
         List<Card> GetDeckCards(int userId);
         bool SaveDeck(int userId, List<Card> cards);
+        bool IsCardInDeck(int cardId);
     }
 }

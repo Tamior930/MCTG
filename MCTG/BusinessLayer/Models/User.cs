@@ -47,5 +47,10 @@
         {
             AuthToken = token;
         }
+
+        public void UpdateCoins(int amount)
+        {
+            Coins += amount;
+        }
     }
 }

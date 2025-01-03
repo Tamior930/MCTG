@@ -116,7 +116,7 @@ namespace MCTG.Data
                             ('MagicMissile', 25, 'Normal', 'Spell', NULL, false)
                         ) AS seed_data(name, damage, element_type, card_type, user_id, in_deck)
                         WHERE NOT EXISTS (SELECT 1 FROM cards LIMIT 1);";
-                        
+
                     cmd.ExecuteNonQuery();
                 }
 
