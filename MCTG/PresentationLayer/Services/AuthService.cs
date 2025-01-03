@@ -62,20 +62,5 @@ namespace MCTG.PresentationLayer.Services
             }
             return false;
         }
-
-        public void ValidateToken(string authToken, string username)
-        {
-            string? tokenUsername = GetUsernameFromToken(authToken);
-            if (tokenUsername != username && tokenUsername != "admin")
-            {
-                throw new UnauthorizedAccessException("Access token is invalid for this user");
-            }
-        }
-
-        private string? GetUsernameFromToken(string authToken)
-        {
-            var user = _userRepository.GetUserByToken(authToken);
-            return user?.Username;
-        }
     }
 }

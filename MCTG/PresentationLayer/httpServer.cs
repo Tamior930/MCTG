@@ -300,30 +300,29 @@ namespace MCTG.PresentationLayer
 
                     // Deck Management
                     case ("/deck", "GET"):
-                        string format = GetQueryParam(request.Path, "format");
-                        return CreateHttpResponse(_deckController.GetDeck(authToken, format));
+                        return CreateHttpResponse(_cardController.GetUserDeck(authToken));
                     case ("/deck", "PUT"):
-                        return CreateHttpResponse(_deckController.ConfigureDeck(authToken, request.Body));
+                        return CreateHttpResponse(_cardController.ConfigureDeck(authToken, request.Body));
 
-                    // Trading
-                    case ("/tradings", "GET"):
-                        return CreateHttpResponse(_tradeController.GetTradingDeals(authToken));
-                    case ("/tradings", "POST"):
-                        return CreateHttpResponse(_tradeController.CreateTradingDeal(authToken, request.Body));
-                    case ("/tradings/{tradingId}", "DELETE"):
-                        return CreateHttpResponse(_tradeController.DeleteTradingDeal(authToken, GetTradingIdFromPath(request.Path)));
-                    case ("/tradings/{tradingId}", "POST"):
-                        return CreateHttpResponse(_tradeController.ExecuteTrade(authToken, GetTradingIdFromPath(request.Path), request.Body));
+                    // // Trading
+                    // case ("/tradings", "GET"):
+                    //     return CreateHttpResponse(_tradeController.GetTradingDeals(authToken));
+                    // case ("/tradings", "POST"):
+                    //     return CreateHttpResponse(_tradeController.CreateTradingDeal(authToken, request.Body));
+                    // case ("/tradings/{tradingId}", "DELETE"):
+                    //     return CreateHttpResponse(_tradeController.DeleteTradingDeal(authToken, GetTradingIdFromPath(request.Path)));
+                    // case ("/tradings/{tradingId}", "POST"):
+                    //     return CreateHttpResponse(_tradeController.ExecuteTrade(authToken, GetTradingIdFromPath(request.Path), request.Body));
 
-                    // Battle
-                    case ("/battles", "POST"):
-                        return CreateHttpResponse(_battleController.HandleBattleRequest(authToken));
+                    // // Battle
+                    // case ("/battles", "POST"):
+                    //     return CreateHttpResponse(_battleController.HandleBattleRequest(authToken));
 
-                    // Stats & Scoreboard
-                    case ("/stats", "GET"):
-                        return CreateHttpResponse(_userController.GetUserStats(authToken));
-                    case ("/score", "GET"):
-                        return CreateHttpResponse(_userController.GetScoreboard(authToken));
+                    // // Stats & Scoreboard
+                    // case ("/stats", "GET"):
+                    //     return CreateHttpResponse(_userController.GetUserStats(authToken));
+                    // case ("/score", "GET"):
+                    //     return CreateHttpResponse(_userController.GetScoreboard(authToken));
 
                     default:
                         return new HttpResponse

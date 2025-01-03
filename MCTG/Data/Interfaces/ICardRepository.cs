@@ -5,14 +5,14 @@ namespace MCTG.Data.Interfaces
     public interface ICardRepository
     {
         // Basic CRUD
-        // void AddCard(Card card, int userId);
+        void AddCard(Card card, int userId);
         // void RemoveCard(int cardId);
         // Card GetCardById(int cardId);
         // bool UpdateCardOwner(int cardId, int newUserId);
 
         // // Card Retrieval
-        // List<Card> GetAllCardsForUser(int userId);
-        // List<Card> GetDeckCards(int userId);
+        List<Card> GetAllCardsForUser(int userId);
+        //List<Card> GetDeckCards(int userId);
         List<Card> GetRandomCardsForPackage(int count);
         // List<Card> GetCardsByIds(List<int> cardIds);
 

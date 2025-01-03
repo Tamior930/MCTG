@@ -88,7 +88,7 @@ namespace MCTG.PresentationLayer.Controller
                 targetUser.Wins,
                 targetUser.Losses,
                 targetUser.Coins,
-                StackSize = targetUser.GetStackSize(),
+                StackSize = _cardService.GetUserStackSize(targetUser.Id),
                 Deck = _cardService.GetUserDeck(targetUser.Id)
             };
 
@@ -108,7 +108,7 @@ namespace MCTG.PresentationLayer.Controller
                 user.Wins,
                 user.Losses,
                 user.Coins,
-                StackSize = user.GetStackSize()
+                StackSize = _cardService.GetUserStackSize(user.Id)
             };
 
             return CreateResponse(200, SerializeResponse(stats));

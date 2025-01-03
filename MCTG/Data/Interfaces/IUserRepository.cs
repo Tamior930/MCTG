@@ -7,6 +7,7 @@ namespace MCTG.Data.Interfaces
         // Basic CRUD
         void AddUser(User user);
         User GetUserByToken(string authToken);
+        User GetUserByUsername(string username);
         bool UpdateUserProfile(string authToken, UserProfile profile);
         // User MapUserFromDatabase(NpgsqlDataReader reader);
 

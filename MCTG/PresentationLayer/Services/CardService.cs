@@ -25,9 +25,6 @@ namespace MCTG.PresentationLayer.Services
         // Package Management
         public string PurchasePackage(User user)
         {
-            if (user == null)
-                return "Error: User not found";
-
             if (user.Coins < PACKAGE_COST)
                 return "Error: Insufficient coins";
 
@@ -37,14 +34,14 @@ namespace MCTG.PresentationLayer.Services
 
             try
             {
-                // Execute purchase transaction
                 if (_userRepository.UpdateUserCoins(user.Id, -PACKAGE_COST))
                 {
                     foreach (var card in package)
                     {
+                        user.Stack.AddCard(card);
                         _cardRepository.AddCard(card, user.Id);
                     }
-                    return $"Package purchased successfully! Added {PACKAGE_SIZE} cards to your stack.";
+                    return $"Package purchased successfully!";
                 }
                 return "Error: Failed to process payment";
             }
@@ -57,79 +54,45 @@ namespace MCTG.PresentationLayer.Services
         // Card Management
         public List<Card> GetUserCards(int userId)
         {
-            try
-            {
-                return _cardRepository.GetAllCardsForUser(userId);
-            }
-            catch
-            {
-                return new List<Card>();
-            }
+            return _cardRepository.GetAllCardsForUser(userId);
         }
 
         public List<Card> GetUserDeck(int userId)
         {
-            try
-            {
-                return _cardRepository.GetDeckCards(userId);
-            }
-            catch
-            {
-                return new List<Card>();
-            }
+            return _deckRepository.GetDeckCards(userId);
         }
 
-        public string ConfigureDeck(int userId, List<int> cardIds)
+        public int GetUserStackSize(int userId)
         {
+            return _cardRepository.GetAllCardsForUser(userId).Count;
+        }
+
+        public string ConfigureDeck(User user, List<int> cardIds)
+        {
+            // 1. Check if user selected exactly 4 cards
             if (cardIds == null || cardIds.Count != DECK_SIZE)
-                return "Error: Deck must contain exactly 4 cards";
-
-            var cards = _cardRepository.GetCardsByIds(cardIds);
-            if (cards.Count != DECK_SIZE)
-                return "Error: One or more cards not found";
-
-            // Verify card ownership
-            foreach (var card in cards)
             {
-                if (!_cardRepository.ValidateCardOwnership(card.Id, userId))
-                    return $"Error: Card {card.Name} is not in your stack";
+                return "Error: Deck must contain exactly 4 cards";
             }
 
+            var userDeck = _deckRepository.GetDeckCards(user.Id);
+
+            // 4. Save the deck
             try
             {
-                _deckRepository.SaveDeck(userId, cards);
-                return "Deck configured successfully!";
+                if (!_deckRepository.SaveDeck(user.Id, userDeck))
+                {
+                    return "Error: Failed to save deck";
+                }
+                // Update in-memory deck
+                user.Deck.SetDeck(userDeck);
+                
+                return "Deck configured successfully";
             }
             catch (Exception ex)
             {
-                return $"Error: Failed to configure deck - {ex.Message}";
+                return $"Error: {ex.Message}";
             }
         }
-
-        // public List<Trade> GetTradingDeals()
-        // {
-        //     return _tradeRepository.GetAllTrades();
-        // }
-
-        // public string CreateTradingDeal(int userId, TradingDeal tradingDeal)
-        // {
-        //     if (!_cardRepository.ValidateCardOwnership(tradingDeal.CardToTrade, userId))
-        //         return "Error: Card not in user's stack";
-
-        //     if (_cardRepository.IsCardInDeck(tradingDeal.CardToTrade))
-        //         return "Error: Card is in deck";
-
-        //     var trade = new Trade
-        //     {
-        //         CardId = tradingDeal.CardToTrade,
-        //         UserId = userId,
-        //         MinimumDamage = tradingDeal.MinimumDamage,
-        //         RequiredType = tradingDeal.Type
-        //     };
-
-        //     return _tradeRepository.CreateTrade(trade)
-        //         ? "Trading deal created successfully"
-        //         : "Error: Failed to create trading deal";
-        // }
     }
 }

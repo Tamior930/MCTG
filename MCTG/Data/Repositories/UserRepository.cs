@@ -73,6 +73,19 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        public User GetUserByUsername(string username)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+
+            command.CommandText = "SELECT * FROM users WHERE username = @username";
+            command.Parameters.AddWithValue("@username", username);
+
+            using var reader = command.ExecuteReader();
+            return reader.Read() ? MapUserFromDatabase(reader) : null!;
+        }
+
         public bool UpdateUserProfile(string authToken, UserProfile profile)
         {
             using var connection = _databaseHandler.GetConnection();

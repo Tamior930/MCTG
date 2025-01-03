@@ -18,31 +18,18 @@ namespace MCTG.Data.Repositories
         /// <summary>
         /// Adds a new card to a user's collection
         /// </summary>
-        // public void AddCard(Card card, int userId)
-        // {
-        //     using var connection = _databaseHandler.GetConnection();
-        //     connection.Open();
+        public void AddCard(Card card, int userId)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
 
-        //     using var command = connection.CreateCommand();
-        //     command.CommandText = @"
-        //         INSERT INTO cards (name, damage, element_type, card_type, user_id, in_deck)
-        //         VALUES (@name, @damage, @elementType, @cardType, @userId, false)";
-
-        //     command.Parameters.AddWithValue("@name", card.Name);
-        //     command.Parameters.AddWithValue("@damage", card.Damage);
-        //     command.Parameters.AddWithValue("@elementType", card.ElementType.ToString());
-        //     command.Parameters.AddWithValue("@cardType", card.Type.ToString());
-        //     command.Parameters.AddWithValue("@userId", userId);
-
-        //     try
-        //     {
-        //         command.ExecuteNonQuery();
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new Exception($"Failed to add card {card.Name}: {ex.Message}");
-        //     }
-        // }
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE cards SET user_id = @userId WHERE id = @cardId";
+            command.Parameters.AddWithValue("@userId", userId);
+            command.Parameters.AddWithValue("@cardId", card.Id);
+            
+            command.ExecuteNonQuery();
+        }
 
         // /// <summary>
         // /// Removes a card from the database
@@ -125,61 +112,69 @@ namespace MCTG.Data.Repositories
         /// <summary>
         /// Gets all cards owned by a specific user
         /// </summary>
-        // public List<Card> GetAllCardsForUser(int userId)
-        // {
-        //     var userCards = new List<Card>();
+        public List<Card> GetAllCardsForUser(int userId)
+        {
+            var userCards = new List<Card>();
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
 
-        //     using var connection = _databaseHandler.GetConnection();
-        //     connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM cards WHERE user_id = @userId";
+            command.Parameters.AddWithValue("@userId", userId);
+            
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                userCards.Add(CreateCardFromDatabaseRow(reader));
+            }
+            return userCards;
+        }
 
-        //     using var command = connection.CreateCommand();
-        //     command.CommandText = "SELECT * FROM cards WHERE user_id = @userId";
-        //     command.Parameters.AddWithValue("@userId", userId);
-
-        //     try
-        //     {
-        //         using var reader = command.ExecuteReader();
-        //         while (reader.Read())
-        //         {
-        //             Card card = CreateCardFromDatabaseRow(reader);
-        //             userCards.Add(card);
-        //         }
-        //         return userCards;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new Exception($"Failed to get cards for user {userId}: {ex.Message}");
-        //     }
-        // }
+        /// <summary>
+        /// Gets all cards in a user's deck
+        /// </summary>
+        public List<Card> GetDeckCards(int userId)
+        {
+            var deckCards = new List<Card>();
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM cards WHERE user_id = @userId AND in_deck = true";
+            command.Parameters.AddWithValue("@userId", userId);
+            
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                deckCards.Add(CreateCardFromDatabaseRow(reader));
+            }
+            return deckCards;
+        }
 
         /// <summary>
         /// Gets random cards for creating a new package
         /// </summary>
         public List<Card> GetRandomCardsForPackage(int count)
         {
-            var packageCards = new List<Card>();
-
+            var cards = new List<Card>();
+            
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
-
+            
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT * FROM cards WHERE user_id IS NULL ORDER BY RANDOM() LIMIT @count";
+            command.CommandText = @"
+                SELECT * FROM cards 
+                WHERE user_id IS NULL 
+                ORDER BY RANDOM() 
+                LIMIT @count";
             command.Parameters.AddWithValue("@count", count);
-
-            try
+            
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    Card card = CreateCardFromDatabaseRow(reader);
-                    packageCards.Add(card);
-                }
-                return packageCards;
+                cards.Add(CreateCardFromDatabaseRow(reader));
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to get random cards for package: {ex.Message}");
-            }
+            
+            return cards;
         }
 
         /// <summary>
@@ -244,36 +239,6 @@ namespace MCTG.Data.Repositories
         //     }
         // }
 
-        /// <summary>
-        /// Gets all cards in a user's deck
-        /// </summary>
-        // public List<Card> GetDeckCards(int userId)
-        // {
-        //     var deckCards = new List<Card>();
-
-        //     using var connection = _databaseHandler.GetConnection();
-        //     connection.Open();
-
-        //     using var command = connection.CreateCommand();
-        //     command.CommandText = "SELECT * FROM cards WHERE user_id = @userId AND in_deck = true";
-        //     command.Parameters.AddWithValue("@userId", userId);
-
-        //     try
-        //     {
-        //         using var reader = command.ExecuteReader();
-        //         while (reader.Read())
-        //         {
-        //             Card card = CreateCardFromDatabaseRow(reader);
-        //             deckCards.Add(card);
-        //         }
-        //         return deckCards;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new Exception($"Failed to get deck cards for user {userId}: {ex.Message}");
-        //     }
-        // }
-
         // /// <summary>
         // /// Gets multiple cards by their IDs
         // /// </summary>
@@ -335,42 +300,38 @@ namespace MCTG.Data.Repositories
         /// <summary>
         /// Creates a card object from database row data
         /// </summary>
-        // private Card CreateCardFromDatabaseRow(NpgsqlDataReader reader)
-        // {
-        //     int id = reader.GetInt32(reader.GetOrdinal("id"));
-        //     string name = reader.GetString(reader.GetOrdinal("name"));
-        //     int damage = reader.GetInt32(reader.GetOrdinal("damage"));
-        //     ElementType elementType = Enum.Parse<ElementType>(reader.GetString(reader.GetOrdinal("element_type")));
-        //     CardType type = Enum.Parse<CardType>(reader.GetString(reader.GetOrdinal("card_type")));
+        private Card CreateCardFromDatabaseRow(NpgsqlDataReader reader)
+        {
+            // Read basic card information
+            int id = reader.GetInt32(reader.GetOrdinal("id"));
+            string name = reader.GetString(reader.GetOrdinal("name"));
+            int damage = reader.GetInt32(reader.GetOrdinal("damage"));
+            ElementType elementType = Enum.Parse<ElementType>(reader.GetString(reader.GetOrdinal("element_type")));
+            CardType cardType = Enum.Parse<CardType>(reader.GetString(reader.GetOrdinal("card_type")));
 
-        //     return type == CardType.Spell
-        //         ? new SpellCard(id, name, damage, elementType)
-        //         : CreateMonsterCard(id, name, damage, elementType);
-        // }
+            // Create appropriate card type
+            if (cardType == CardType.Spell)
+            {
+                return new SpellCard(id, name, damage, elementType);
+            }
+            else // CardType.Monster
+            {
+                MonsterType monsterType = DetermineMonsterType(name);
+                return new MonsterCard(id, name, damage, elementType, monsterType);
+            }
+        }
 
-        /// <summary>
-        /// Creates a monster card with the appropriate monster type
-        // /// </summary>
-        // private MonsterCard CreateMonsterCard(int id, string name, int damage, ElementType elementType)
-        // {
-        //     MonsterType monsterType = DetermineMonsterType(name);
-        //     return new MonsterCard(id, name, damage, elementType, monsterType);
-        // }
+        private MonsterType DetermineMonsterType(string name)
+        {
+            if (name.Contains("Goblin")) return MonsterType.Goblin;
+            if (name.Contains("Dragon")) return MonsterType.Dragon;
+            if (name.Contains("Wizard")) return MonsterType.Wizard;
+            if (name.Contains("Ork")) return MonsterType.Ork;
+            if (name.Contains("Knight")) return MonsterType.Knight;
+            if (name.Contains("Kraken")) return MonsterType.Kraken;
+            if (name.Contains("FireElf")) return MonsterType.FireElf;
 
-        /// <summary>
-        /// Determines the monster type based on the card name
-        /// </summary>
-        // private MonsterType DetermineMonsterType(string name)
-        // {
-        //     if (name.Contains("Goblin")) return MonsterType.Goblin;
-        //     if (name.Contains("Dragon")) return MonsterType.Dragon;
-        //     if (name.Contains("Wizard")) return MonsterType.Wizard;
-        //     if (name.Contains("Ork")) return MonsterType.Ork;
-        //     if (name.Contains("Knight")) return MonsterType.Knight;
-        //     if (name.Contains("Kraken")) return MonsterType.Kraken;
-        //     if (name.Contains("FireElf")) return MonsterType.FireElf;
-
-        //     return MonsterType.Goblin; // Default type
-        // }
+            return MonsterType.Goblin; // Default type
+        }
     }
 }
