@@ -7,176 +7,114 @@ namespace MCTG.PresentationLayer.Services
 {
     public class BattleService
     {
-        private readonly IUserRepository _userRepository;
         private readonly IDeckRepository _deckRepository;
-        private readonly ConcurrentQueue<User> _battleQueue;
+        private static readonly ConcurrentQueue<int> _waitingPlayers = new ConcurrentQueue<int>();
         private const int MAX_ROUNDS = 100;
 
-        public BattleService(IUserRepository userRepository, IDeckRepository deckRepository)
+        public BattleService(IDeckRepository deckRepository)
         {
-            _userRepository = userRepository;
             _deckRepository = deckRepository;
-            _battleQueue = new ConcurrentQueue<User>();
         }
 
-        public User FindOpponent(int userId)
+        public string HandleBattle(int userId)
         {
-            if (_battleQueue.TryDequeue(out User opponent))
+            // 1. Check if there's already a waiting player
+            if (_waitingPlayers.TryDequeue(out int opponentId))
             {
-                if (opponent.Id != userId) // Don't match with self
-                    return opponent;
-
-                // If we dequeued ourselves, add back to queue
-                _battleQueue.Enqueue(opponent);
+                if (opponentId == userId)
+                {
+                    _waitingPlayers.Enqueue(opponentId); // Put them back in queue
+                    return "Error: Cannot battle against yourself";
+                }
+                return ExecuteBattle(userId, opponentId);
             }
-            return null;
+
+            // 2. No opponent available, add user to waiting queue
+            _waitingPlayers.Enqueue(userId);
+            return "Error: No opponent available. Added to waiting queue.";
         }
 
-        public void AddUserToQueue(User user)
+        private string ExecuteBattle(int player1Id, int player2Id)
         {
-            _battleQueue.Enqueue(user);
-        }
-
-        public BattleResult ExecuteBattle(User player1, User player2)
-        {
+            var player1Deck = new List<Card>(_deckRepository.GetDeckCards(player1Id));
+            var player2Deck = new List<Card>(_deckRepository.GetDeckCards(player2Id));
             var battleLog = new StringBuilder();
-            battleLog.AppendLine($"Battle: {player1.Username} vs {player2.Username}\n");
+            var random = new Random();
 
-            var p1Deck = _deckRepository.GetDeckByUserId(player1.Id);
-            var p2Deck = _deckRepository.GetDeckByUserId(player2.Id);
+            battleLog.AppendLine("Battle started!");
             int roundCount = 0;
 
-            while (roundCount < MAX_ROUNDS && p1Deck.Any() && p2Deck.Any())
+            while (player1Deck.Any() && player2Deck.Any() && roundCount < MAX_ROUNDS)
             {
                 roundCount++;
                 battleLog.AppendLine($"\nRound {roundCount}:");
 
-                // Get random cards for battle
-                var p1Card = GetRandomCard(p1Deck);
-                var p2Card = GetRandomCard(p2Deck);
+                // Select random cards for the round
+                var player1Card = player1Deck[random.Next(player1Deck.Count)];
+                var player2Card = player2Deck[random.Next(player2Deck.Count)];
 
-                // Execute round
-                var roundResult = ExecuteRound(p1Card, p2Card);
-                battleLog.AppendLine(roundResult.Log);
+                // Calculate damages
+                double damage1 = player1Card.CalculateDamage(player2Card);
+                double damage2 = player2Card.CalculateDamage(player1Card);
 
-                // Handle card transfer based on round result
-                if (roundResult.Winner != null)
+                // Log the round
+                battleLog.AppendLine($"Player 1: {player1Card.Name} ({damage1} damage) vs Player 2: {player2Card.Name} ({damage2} damage)");
+
+                // Determine round winner and transfer cards
+                if (damage1 > damage2)
                 {
-                    TransferCard(roundResult.Winner == p1Card ? p1Deck : p2Deck,
-                               roundResult.Winner == p1Card ? p2Deck : p1Deck,
-                               roundResult.Loser);
+                    battleLog.AppendLine("Player 1 wins the round!");
+                    TransferCard(player2Card, player2Deck, player1Deck);
                 }
-
-                // Check for early win condition
-                if (!p1Deck.Any() || !p2Deck.Any())
-                    break;
+                else if (damage2 > damage1)
+                {
+                    battleLog.AppendLine("Player 2 wins the round!");
+                    TransferCard(player1Card, player1Deck, player2Deck);
+                }
+                else
+                {
+                    battleLog.AppendLine("Round ended in a draw!");
+                }
             }
 
             // Determine battle winner
-            var winner = DetermineBattleWinner(p1Deck, p2Deck);
-            battleLog.AppendLine($"\nBattle ended after {roundCount} rounds.");
-            battleLog.AppendLine(GetBattleResultMessage(winner, player1, player2));
+            string result = DetermineBattleResult(player1Deck, player2Deck, roundCount, battleLog);
 
-            return new BattleResult
-            {
-                Winner = winner,
-                BattleLog = battleLog.ToString()
-            };
+            // Save updated decks
+            _deckRepository.SaveDeck(player1Id, player1Deck);
+            _deckRepository.SaveDeck(player2Id, player2Deck);
+
+            return result;
         }
 
-        private RoundResult ExecuteRound(Card card1, Card card2)
+        private void TransferCard(Card card, List<Card> fromDeck, List<Card> toDeck)
         {
-            // Apply special rules first
-            if (ApplySpecialRules(card1, card2, out RoundResult specialResult))
-                return specialResult;
-
-            // Calculate damage
-            double damage1 = card1.CalculateDamage(card2);
-            double damage2 = card2.CalculateDamage(card1);
-
-            // Determine round winner
-            if (damage1 > damage2)
-                return new RoundResult(card1, card2, $"{card1.Name} defeats {card2.Name}");
-            else if (damage2 > damage1)
-                return new RoundResult(card2, card1, $"{card2.Name} defeats {card1.Name}");
-            else
-                return new RoundResult(null, null, "Round ends in a draw");
+            fromDeck.Remove(card);
+            toDeck.Add(card);
         }
 
-        private bool ApplySpecialRules(Card card1, Card card2, out RoundResult result)
+        private string DetermineBattleResult(List<Card> deck1, List<Card> deck2, int rounds, StringBuilder log)
         {
-            // Implement special rules from the specification
-            if (card1 is MonsterCard monster1 && card2 is MonsterCard monster2)
+            if (rounds >= MAX_ROUNDS)
             {
-                // Goblins are too afraid of Dragons
-                if (monster1.MonsterType == MonsterType.Goblin && monster2.MonsterType == MonsterType.Dragon)
-                {
-                    result = new RoundResult(card2, card1, "Goblin is too afraid of Dragon");
-                    return true;
-                }
-                // ... implement other special rules
+                log.AppendLine("\nBattle ended in a draw (maximum rounds reached)");
+                return log.ToString();
             }
 
-            result = null;
-            return false;
-        }
-
-        private Card GetRandomCard(List<Card> deck)
-        {
-            var random = new Random();
-            int index = random.Next(deck.Count);
-            return deck[index];
-        }
-
-        private void TransferCard(List<Card> winnerDeck, List<Card> loserDeck, Card cardToTransfer)
-        {
-            loserDeck.Remove(cardToTransfer);
-            winnerDeck.Add(cardToTransfer);
-        }
-
-        private BattleWinner DetermineBattleWinner(List<Card> deck1, List<Card> deck2)
-        {
-            if (!deck1.Any() && !deck2.Any()) return BattleWinner.Draw;
-            if (!deck2.Any()) return BattleWinner.Player1;
-            if (!deck1.Any()) return BattleWinner.Player2;
-            return BattleWinner.Draw; // If max rounds reached
-        }
-
-        private string GetBattleResultMessage(BattleWinner winner, User player1, User player2)
-        {
-            return winner switch
+            if (!deck1.Any())
             {
-                BattleWinner.Player1 => $"{player1.Username} wins the battle!",
-                BattleWinner.Player2 => $"{player2.Username} wins the battle!",
-                _ => "Battle ends in a draw!"
-            };
+                log.AppendLine("\nPlayer 2 wins the battle!");
+                return log.ToString();
+            }
+
+            if (!deck2.Any())
+            {
+                log.AppendLine("\nPlayer 1 wins the battle!");
+                return log.ToString();
+            }
+
+            log.AppendLine("\nBattle ended in a draw");
+            return log.ToString();
         }
-    }
-
-    public class RoundResult
-    {
-        public Card Winner { get; }
-        public Card Loser { get; }
-        public string Log { get; }
-
-        public RoundResult(Card winner, Card loser, string log)
-        {
-            Winner = winner;
-            Loser = loser;
-            Log = log;
-        }
-    }
-
-    public class BattleResult
-    {
-        public BattleWinner Winner { get; set; }
-        public string BattleLog { get; set; } = string.Empty;
-    }
-
-    public enum BattleWinner
-    {
-        Player1,
-        Player2,
-        Draw
     }
 }

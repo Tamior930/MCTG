@@ -39,20 +39,89 @@ namespace MCTG.PresentationLayer.Services
 
             // 4. Set trade properties
             trade.UserId = user.Id;
-            trade.IsActive = true;
+            trade.Status = true;
 
             // 5. Create the trade
             try
             {
                 bool success = _tradeRepository.CreateTrade(trade);
-                return success 
-                    ? "Trading deal created successfully" 
+                return success
+                    ? "Trading deal created successfully"
                     : "Error: Failed to create trading deal";
             }
             catch (Exception ex)
             {
                 return $"Error: {ex.Message}";
             }
+        }
+
+        public string DeleteTradingDeal(string tradingId)
+        {
+            try
+            {
+                bool success = _tradeRepository.DeleteTrade(tradingId);
+                return success
+                    ? "Trading deal successfully deleted"
+                    : "Error: Failed to delete trading deal";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        public Trade GetTradingDealById(string tradingId)
+        {
+            return _tradeRepository.GetTradeById(tradingId);
+        }
+
+        public string ExecuteTrade(string tradingId, int offeredCardId, int newOwnerId)
+        {
+            // 1. Verify card ownership
+            if (!_cardRepository.ValidateCardOwnership(offeredCardId, newOwnerId))
+                return "Error: You don't own this card";
+
+            // 2. Check if offered card is in deck
+            if (_deckRepository.IsCardInDeck(offeredCardId))
+                return "Error: Cannot trade cards that are in your deck";
+
+            // 3. Get trade details
+            var trade = _tradeRepository.GetTradeById(tradingId);
+            if (trade == null)
+                return "Error: Trading deal not found";
+
+            // 4. Validate trade requirements
+            if (!ValidateTradeRequirements(offeredCardId, trade))
+                return "Error: Offered card doesn't meet the trading requirements";
+
+            // 5. Execute the trade
+            try
+            {
+                bool success = _tradeRepository.ExecuteTrade(tradingId, offeredCardId, newOwnerId);
+                return success
+                    ? "Trading deal successfully executed"
+                    : "Error: Failed to execute trade";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        private bool ValidateTradeRequirements(int offeredCardId, Trade trade)
+        {
+            var offeredCard = _cardRepository.GetCardById(offeredCardId);
+            if (offeredCard == null) return false;
+
+            // Check if it's the required card type (Spell or Monster)
+            if (!offeredCard.Type.ToString().Equals(trade.RequiredType, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            // Check minimum damage requirement
+            if (offeredCard.Damage < trade.MinimumDamage)
+                return false;
+
+            return true;
         }
     }
 }

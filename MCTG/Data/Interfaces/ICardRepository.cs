@@ -6,8 +6,9 @@ namespace MCTG.Data.Interfaces
     {
         // Basic CRUD
         void UpdateCardOwnership(Card card, int userId);
+        bool ValidateCardOwnership(int cardId, int userId);
         // void RemoveCard(int cardId);
-        // Card GetCardById(int cardId);
+        Card GetCardById(int cardId);
         // bool UpdateCardOwner(int cardId, int newUserId);
 
         // // Card Retrieval

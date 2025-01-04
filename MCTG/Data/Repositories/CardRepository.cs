@@ -60,29 +60,18 @@ namespace MCTG.Data.Repositories
         /// <summary>
         /// Gets a card by its ID
         /// </summary>
-        // public Card GetCardById(int cardId)
-        // {
-        //     using var connection = _databaseHandler.GetConnection();
-        //     connection.Open();
+        public Card GetCardById(int cardId)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
 
-        //     using var command = connection.CreateCommand();
-        //     command.CommandText = "SELECT * FROM cards WHERE id = @cardId";
-        //     command.Parameters.AddWithValue("@cardId", cardId);
+            command.CommandText = "SELECT * FROM cards WHERE id = @cardId";
+            command.Parameters.AddWithValue("@cardId", cardId);
 
-        //     try
-        //     {
-        //         using var reader = command.ExecuteReader();
-        //         if (reader.Read())
-        //         {
-        //             return CreateCardFromDatabaseRow(reader);
-        //         }
-        //         return null!;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new Exception($"Failed to get card {cardId}: {ex.Message}");
-        //     }
-        // }
+            using var reader = command.ExecuteReader();
+            return reader.Read() ? CreateCardFromDatabaseRow(reader) : null;
+        }
 
         /// <summary>
         /// Updates the owner of a card
@@ -258,7 +247,14 @@ namespace MCTG.Data.Repositories
         /// </summary>
         public bool ValidateCardOwnership(int cardId, int userId)
         {
-            throw new NotImplementedException();
+            using var connection = _databaseHandler.GetConnection();
+            using var command = connection.CreateCommand();
+
+            command.CommandText = "SELECT COUNT(*) FROM cards WHERE id = @cardId AND user_id = @userId";
+            command.Parameters.AddWithValue("@cardId", cardId);
+            command.Parameters.AddWithValue("@userId", userId);
+
+            return Convert.ToInt32(command.ExecuteScalar()) > 0;
         }
 
         // Helper Methods

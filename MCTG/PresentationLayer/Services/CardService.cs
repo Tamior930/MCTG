@@ -8,15 +8,13 @@ namespace MCTG.PresentationLayer.Services
         private readonly IUserRepository _userRepository;
         private readonly ICardRepository _cardRepository;
         private readonly IDeckRepository _deckRepository;
-        private readonly ITradeRepository _tradeRepository;
         private const int PACKAGE_SIZE = 5;
         private const int DECK_SIZE = 4;
         private const int PACKAGE_COST = 5;
 
         public CardService(IUserRepository userRepository, ICardRepository cardRepository,
-            IDeckRepository deckRepository, ITradeRepository tradeRepository)
+            IDeckRepository deckRepository)
         {
-            _tradeRepository = tradeRepository;
             _userRepository = userRepository;
             _cardRepository = cardRepository;
             _deckRepository = deckRepository;

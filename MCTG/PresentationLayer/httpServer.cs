@@ -48,14 +48,14 @@ namespace MCTG.PresentationLayer
             // Initialize services
             AuthService authService = new AuthService(userRepository);
             UserService userService = new UserService(userRepository);
-            CardService cardService = new CardService(userRepository, cardRepository, deckRepository, tradeRepository);
-            BattleService battleService = new BattleService(userRepository, deckRepository);
+            CardService cardService = new CardService(userRepository, cardRepository, deckRepository);
+            BattleService battleService = new BattleService(deckRepository);
             TradingService tradingService = new TradingService(tradeRepository, cardRepository, deckRepository);
 
             // Initialize controllers
             _authController = new AuthController(authService, userService);
             _userController = new UserController(userService, authService, cardService);
-            _battleController = new BattleController(battleService, userService);
+            _battleController = new BattleController(battleService, userService, cardService);
             _cardController = new CardController(cardService, userService);
             _tradingController = new TradingController(tradingService, userService);
 
@@ -318,9 +318,9 @@ namespace MCTG.PresentationLayer
                     case ("/tradings/{tradingId}", "POST"):
                         return CreateHttpResponse(_tradingController.ExecuteTrade(authToken, GetTradingIdFromPath(request.Path), request.Body));
 
-                    // // Battle
-                    // case ("/battles", "POST"):
-                    //     return CreateHttpResponse(_battleController.HandleBattleRequest(authToken));
+                    // Battle
+                    case ("/battles", "POST"):
+                        return CreateHttpResponse(_battleController.HandleBattleRequest(authToken));
 
                     // // Stats & Scoreboard
                     // case ("/stats", "GET"):
