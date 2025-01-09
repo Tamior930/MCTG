@@ -16,14 +16,12 @@ namespace MCTG.Presentation.Controllers
 
         public string HandleBattleRequest(string authToken)
         {
-            // 1. Authenticate user
             var (user, error) = AuthenticateUser(authToken);
             if (user == null)
                 return error;
 
             try
             {
-                // 3. Find or wait for opponent
                 var result = _battleService.HandleBattle(user);
 
                 if (result.StartsWith("Error"))
@@ -31,7 +29,6 @@ namespace MCTG.Presentation.Controllers
                 if (result == "Waiting for opponent...")
                     return CreateResponse(202, result);
 
-                // 4. Return battle results
                 return result.StartsWith("Error")
                     ? CreateResponse(400, result)
                     : CreateResponse(200, result);

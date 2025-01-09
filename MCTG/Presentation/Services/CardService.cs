@@ -20,7 +20,6 @@ namespace MCTG.Presentation.Services
             _deckRepository = deckRepository;
         }
 
-        // Package Management
         public string PurchasePackage(User user)
         {
             if (user.Coins < PACKAGE_COST)
@@ -50,7 +49,6 @@ namespace MCTG.Presentation.Services
             }
         }
 
-        // Card Management
         public List<Card> GetUserCards(int userId)
         {
             return _cardRepository.GetAllCardsForUser(userId);
@@ -68,13 +66,11 @@ namespace MCTG.Presentation.Services
 
         public string ConfigureDeck(User user, List<int> cardIds)
         {
-            // 1. Check if user selected exactly 4 cards
             if (cardIds == null || cardIds.Count != DECK_SIZE)
             {
                 return "Error: Deck must contain exactly 4 cards";
             }
 
-            // 2. Verify card ownership and get card objects
             var selectedCards = new List<Card>();
             foreach (var cardId in cardIds)
             {
@@ -88,14 +84,12 @@ namespace MCTG.Presentation.Services
                 selectedCards.Add(card);
             }
 
-            // 3. Save the deck
             try
             {
                 if (!_deckRepository.SaveDeck(user.Id, selectedCards))
                 {
                     return "Error: Failed to save deck";
                 }
-                // Update in-memory deck
                 user.Deck.SetDeck(selectedCards);
 
                 return "Deck configured successfully";

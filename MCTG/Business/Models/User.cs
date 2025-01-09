@@ -18,8 +18,8 @@
         {
             Username = username;
             Password = password;
-            Coins = 20; // Starting coins as per roadmap
-            ELO = 100;  // Starting ELO as per roadmap
+            Coins = 20;
+            ELO = 100;
             Stack = new Stack();
             Deck = new Deck();
             Profile = new UserProfile("", "");
@@ -51,6 +51,20 @@
         public void UpdateCoins(int amount)
         {
             Coins += amount;
+        }
+
+        public void UpdateStats(bool won)
+        {
+            if (won)
+            {
+                Wins++;
+                ELO += 3;
+            }
+            else
+            {
+                Losses++;
+                ELO -= 5;
+            }
         }
     }
 }

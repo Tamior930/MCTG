@@ -20,7 +20,7 @@ namespace MCTG.Data.Repositories
             connection.Open();
             using var command = connection.CreateCommand();
 
-            command.CommandText = "SELECT * FROM trades WHERE is_active = true";
+            command.CommandText = "SELECT * FROM trades WHERE status = 'ACTIVE'";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -37,41 +37,44 @@ namespace MCTG.Data.Repositories
                 reader.GetInt32(reader.GetOrdinal("card_id")),
                 reader.GetInt32(reader.GetOrdinal("user_id")),
                 reader.GetString(reader.GetOrdinal("required_type")),
-                reader.GetString(reader.GetOrdinal("required_element_type")),
-                reader.GetString(reader.GetOrdinal("required_monster_type")),
+                reader.IsDBNull(reader.GetOrdinal("required_element_type")) ? null : reader.GetString(reader.GetOrdinal("required_element_type")),
+                reader.IsDBNull(reader.GetOrdinal("required_monster_type")) ? null : reader.GetString(reader.GetOrdinal("required_monster_type")),
                 reader.GetInt32(reader.GetOrdinal("minimum_damage")),
-                reader.GetBoolean(reader.GetOrdinal("status"))
+                reader.GetString(reader.GetOrdinal("status")) == "ACTIVE"
             );
         }
 
         public bool CreateTrade(Trade trade)
         {
-            using var connection = _databaseHandler.GetConnection();
-            connection.Open();
-            using var command = connection.CreateCommand();
-
-            command.CommandText = @"
-                INSERT INTO trades (card_id, user_id, required_type, required_element_type, 
-                                  required_monster_type, minimum_damage, status) 
-                VALUES (@cardId, @userId, @requiredType, @requiredElementType, 
-                        @requiredMonsterType, @minimumDamage, true)
-                RETURNING id";
-
-            command.Parameters.AddWithValue("@cardId", trade.CardId);
-            command.Parameters.AddWithValue("@userId", trade.UserId);
-            command.Parameters.AddWithValue("@requiredType", trade.RequiredType);
-            command.Parameters.AddWithValue("@requiredElementType", trade.RequiredElementType);
-            command.Parameters.AddWithValue("@requiredMonsterType", trade.RequiredMonsterType);
-            command.Parameters.AddWithValue("@minimumDamage", trade.MinimumDamage);
-
             try
             {
+                using var connection = _databaseHandler.GetConnection();
+                connection.Open();
+                using var command = connection.CreateCommand();
+
+                command.CommandText = @"
+                    INSERT INTO trades (card_id, user_id, required_type, required_element_type, 
+                                      required_monster_type, minimum_damage, status) 
+                    VALUES (@cardId, @userId, @requiredType, @requiredElementType, 
+                            @requiredMonsterType, @minimumDamage, 'ACTIVE')
+                    RETURNING id";
+
+                command.Parameters.AddWithValue("@cardId", trade.CardId);
+                command.Parameters.AddWithValue("@userId", trade.UserId);
+                command.Parameters.AddWithValue("@requiredType", trade.RequiredType);
+                command.Parameters.AddWithValue("@requiredElementType",
+                    (object?)trade.RequiredElementType ?? DBNull.Value);
+                command.Parameters.AddWithValue("@requiredMonsterType",
+                    (object?)trade.RequiredMonsterType ?? DBNull.Value);
+                command.Parameters.AddWithValue("@minimumDamage", trade.MinimumDamage);
+
                 var id = Convert.ToInt32(command.ExecuteScalar());
                 trade.Id = id;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Database error in CreateTrade: {ex.Message}");
                 return false;
             }
         }
@@ -121,7 +124,7 @@ namespace MCTG.Data.Repositories
             {
                 using var command = connection.CreateCommand();
                 command.CommandText = "UPDATE trades SET status = 'DELETED' WHERE id = @tradingId";
-                command.Parameters.AddWithValue("@tradingId", tradingId);
+                command.Parameters.AddWithValue("@tradingId", int.Parse(tradingId));
 
                 int rowsAffected = command.ExecuteNonQuery();
                 transaction.Commit();
@@ -145,7 +148,6 @@ namespace MCTG.Data.Repositories
                 var trade = GetTradeById(tradingId);
                 if (trade == null) return false;
 
-                // Update card ownerships
                 using var command = connection.CreateCommand();
                 command.CommandText = @"
                     UPDATE cards SET user_id = @newOwnerId WHERE id = @offeredCardId;

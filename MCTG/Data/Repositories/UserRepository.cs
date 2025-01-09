@@ -118,29 +118,30 @@ namespace MCTG.Data.Repositories
         {
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
-            using var transaction = connection.BeginTransaction();
+            using var command = connection.CreateCommand();
+
+            int eloChange = won ? 3 : -5;
+
+            command.CommandText = @"
+                UPDATE users 
+                SET elo = elo + @eloChange,
+                    wins = CASE WHEN @won THEN wins + 1 ELSE wins END,
+                    losses = CASE WHEN @won THEN losses ELSE losses + 1 END
+                WHERE token = @token
+                RETURNING id";
+
+            command.Parameters.AddWithValue("@eloChange", eloChange);
+            command.Parameters.AddWithValue("@won", won);
+            command.Parameters.AddWithValue("@token", authToken);
 
             try
             {
-                using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    UPDATE users 
-                    SET elo = CASE WHEN @won THEN elo + 3 ELSE GREATEST(0, elo - 5) END,
-                        wins = CASE WHEN @won THEN wins + 1 ELSE wins END,
-                        losses = CASE WHEN @won THEN losses ELSE losses + 1 END
-                    WHERE token = @token";
-
-                command.Parameters.AddWithValue("@token", authToken);
-                command.Parameters.AddWithValue("@won", won);
-
-                int rowsAffected = command.ExecuteNonQuery();
-                transaction.Commit();
-                return rowsAffected > 0;
+                return command.ExecuteNonQuery() > 0;
             }
             catch (Exception ex)
             {
-                transaction.Rollback();
-                throw new Exception($"Failed to update stats: {ex.Message}");
+                Console.WriteLine($"Error updating user stats: {ex.Message}");
+                return false;
             }
         }
 
@@ -271,6 +272,23 @@ namespace MCTG.Data.Repositories
                 transaction.Rollback();
                 throw new Exception($"Failed to update token: {ex.Message}");
             }
+        }
+
+        public User? GetUserById(int userId)
+        {
+            using var connection = _databaseHandler.GetConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+
+            command.CommandText = "SELECT * FROM users WHERE id = @userId";
+            command.Parameters.AddWithValue("@userId", userId);
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                return MapUserFromDatabase(reader);
+            }
+            return null;
         }
     }
 }

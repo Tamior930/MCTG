@@ -16,12 +16,12 @@ namespace MCTG.Presentation.Services
         {
             if (_userRepository.UserExists(username))
             {
-                return false; // Username already exists
+                return false;
             }
 
             User newUser = new User(username, password);
             _userRepository.AddUser(newUser);
-            return true; // Registration successful
+            return true;
         }
 
         public Token? Login(string username, string password)
@@ -29,15 +29,12 @@ namespace MCTG.Presentation.Services
             User user = _userRepository.GetUserByUsername(username);
             if (user != null && user.Password == password)
             {
-                // Generate new token
                 string tokenValue = Guid.NewGuid().ToString();
                 DateTime expiryTime = DateTime.Now.AddHours(1);
                 var token = new Token(tokenValue, expiryTime);
 
-                // Assign token to user
                 user.AssignToken(token);
 
-                // Persist token to database
                 if (_userRepository.UpdateUserToken(user.Id, token))
                 {
                     return token;
@@ -56,7 +53,6 @@ namespace MCTG.Presentation.Services
             var user = _userRepository.GetUserByToken(authToken);
             if (user != null)
             {
-                // Create expired token
                 var expiredToken = new Token(authToken, DateTime.Now.AddSeconds(-1));
                 return _userRepository.UpdateUserToken(user.Id, expiredToken);
             }

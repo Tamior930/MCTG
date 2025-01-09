@@ -25,32 +25,36 @@ namespace MCTG.Presentation.Services
 
         public string CreateTradingDeal(User user, Trade trade)
         {
-            // 1. Verify card ownership
-            if (!_cardRepository.ValidateCardOwnership(trade.CardId, user.Id))
-                return "Error: You don't own this card";
+            if (trade == null || trade.CardId <= 0)
+                return "Error: Invalid trade data";
 
-            // 2. Check if card is in deck (roadmap: MUST NOT BE IN THE DECK)
-            if (_deckRepository.IsCardInDeck(trade.CardId))
-                return "Error: Cannot trade cards that are in your deck";
-
-            // 3. Check if card is already in a trade
-            if (_tradeRepository.IsCardInTrade(trade.CardId))
-                return "Error: This card is already in a trading deal";
-
-            // 4. Set trade properties
-            trade.UserId = user.Id;
-            trade.Status = true;
-
-            // 5. Create the trade
             try
             {
+                if (!_cardRepository.ValidateCardOwnership(trade.CardId, user.Id))
+                    return "Error: You don't own this card";
+
+                if (_deckRepository.IsCardInDeck(trade.CardId))
+                    return "Error: Cannot trade cards that are in your deck";
+
+                if (_tradeRepository.IsCardInTrade(trade.CardId))
+                    return "Error: This card is already in a trading deal";
+
+                if (string.IsNullOrEmpty(trade.RequiredType))
+                    return "Error: Required type must be specified";
+
+                if (trade.MinimumDamage <= 0)
+                    return "Error: Minimum damage must be greater than 0";
+
+                trade.UserId = user.Id;
                 bool success = _tradeRepository.CreateTrade(trade);
+
                 return success
                     ? "Trading deal created successfully"
                     : "Error: Failed to create trading deal";
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Trading error: {ex.Message}");
                 return $"Error: {ex.Message}";
             }
         }
@@ -77,24 +81,19 @@ namespace MCTG.Presentation.Services
 
         public string ExecuteTrade(string tradingId, int offeredCardId, int newOwnerId)
         {
-            // 1. Verify card ownership
             if (!_cardRepository.ValidateCardOwnership(offeredCardId, newOwnerId))
                 return "Error: You don't own this card";
 
-            // 2. Check if offered card is in deck
             if (_deckRepository.IsCardInDeck(offeredCardId))
                 return "Error: Cannot trade cards that are in your deck";
 
-            // 3. Get trade details
             var trade = _tradeRepository.GetTradeById(tradingId);
             if (trade == null)
                 return "Error: Trading deal not found";
 
-            // 4. Validate trade requirements
             if (!ValidateTradeRequirements(offeredCardId, trade))
                 return "Error: Offered card doesn't meet the trading requirements";
 
-            // 5. Execute the trade
             try
             {
                 bool success = _tradeRepository.ExecuteTrade(tradingId, offeredCardId, newOwnerId);
@@ -113,11 +112,9 @@ namespace MCTG.Presentation.Services
             var offeredCard = _cardRepository.GetCardById(offeredCardId);
             if (offeredCard == null) return false;
 
-            // Check if it's the required card type (Spell or Monster)
             if (!offeredCard.Type.ToString().Equals(trade.RequiredType, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            // Check minimum damage requirement
             if (offeredCard.Damage < trade.MinimumDamage)
                 return false;
 

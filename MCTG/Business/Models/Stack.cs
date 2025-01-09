@@ -16,30 +16,5 @@ namespace MCTG.Business.Models
 
             Cards.Add(card);
         }
-
-        // public bool RemoveCard(Card card)
-        // {
-        //     if (card == null)
-        //         throw new ArgumentNullException(nameof(card));
-
-        //     return Cards.Remove(card);
-        // }
-
-        // public bool Contains(Card card)
-        // {
-        //     return Cards.Contains(card);
-        // }
-
-        // public bool IsCardAvailableForTrade(Card card, Deck deck)
-        // {
-        //     if (card == null)
-        //         throw new ArgumentNullException(nameof(card));
-        //     if (deck == null)
-        //         throw new ArgumentNullException(nameof(deck));
-
-        //     return Contains(card) && !deck.Cards.Contains(card);
-        // }
-
-        // public int Count => Cards.Count;
     }
 }

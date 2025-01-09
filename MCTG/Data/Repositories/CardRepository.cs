@@ -13,7 +13,7 @@ namespace MCTG.Data.Repositories
             _databaseHandler = new DatabaseHandler();
         }
 
-        public bool UpdateCardOwnership(Card card, int newUserId)
+        public bool UpdateCardOwnership(Card card, int newOwnerId)
         {
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
@@ -24,28 +24,28 @@ namespace MCTG.Data.Repositories
                 using var command = connection.CreateCommand();
                 command.CommandText = @"
                     UPDATE cards 
-                    SET user_id = @newUserId,
+                    SET user_id = @newOwnerId,
                         in_deck = false,
                         deck_order = NULL
-                    WHERE id = @cardId";
+                    WHERE id = @cardId
+                    RETURNING id";
 
-                command.Parameters.AddWithValue("@newUserId", newUserId);
+                command.Parameters.AddWithValue("@newOwnerId", newOwnerId);
                 command.Parameters.AddWithValue("@cardId", card.Id);
 
-                int rowsAffected = command.ExecuteNonQuery();
+                var result = command.ExecuteScalar();
 
-                if (rowsAffected != 1)
+                if (result != null)
                 {
-                    transaction.Rollback();
-                    return false;
+                    transaction.Commit();
+                    return true;
                 }
 
-                transaction.Commit();
-                return true;
+                transaction.Rollback();
+                return false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error updating card ownership: {ex.Message}");
                 transaction.Rollback();
                 return false;
             }
@@ -95,7 +95,6 @@ namespace MCTG.Data.Repositories
                 {
                     var card = Card.GenerateRandomCard();
 
-                    // Insert the generated card into database
                     using var command = connection.CreateCommand();
                     command.CommandText = @"
                         INSERT INTO cards (name, damage, element_type, card_type, monster_type)
@@ -107,7 +106,6 @@ namespace MCTG.Data.Repositories
                     command.Parameters.AddWithValue("@elementType", card.ElementType.ToString());
                     command.Parameters.AddWithValue("@cardType", card.Type.ToString());
 
-                    // Handle monster_type based on card type
                     if (card is MonsterCard monsterCard)
                     {
                         command.Parameters.AddWithValue("@monsterType", monsterCard.MonsterType.ToString());
@@ -117,7 +115,6 @@ namespace MCTG.Data.Repositories
                         command.Parameters.AddWithValue("@monsterType", DBNull.Value);
                     }
 
-                    // Get the generated ID and set it on the card
                     card.Id = Convert.ToInt32(command.ExecuteScalar());
                     cards.Add(card);
                 }
@@ -148,19 +145,17 @@ namespace MCTG.Data.Repositories
 
         private Card CreateCardFromDatabaseRow(NpgsqlDataReader reader)
         {
-            // Read basic card information
             int id = reader.GetInt32(reader.GetOrdinal("id"));
             string name = reader.GetString(reader.GetOrdinal("name"));
             int damage = reader.GetInt32(reader.GetOrdinal("damage"));
             ElementType elementType = Enum.Parse<ElementType>(reader.GetString(reader.GetOrdinal("element_type")));
             CardType cardType = Enum.Parse<CardType>(reader.GetString(reader.GetOrdinal("card_type")));
 
-            // Create appropriate card type
             if (cardType == CardType.Spell)
             {
                 return new SpellCard(id, name, damage, elementType);
             }
-            else // CardType.Monster
+            else
             {
                 MonsterType monsterType = DetermineMonsterType(name);
                 return new MonsterCard(id, name, damage, elementType, monsterType);
@@ -169,7 +164,6 @@ namespace MCTG.Data.Repositories
 
         public MonsterType DetermineMonsterType(string name)
         {
-            // Check if any monster type name is contained within the card name
             foreach (MonsterType monsterType in Enum.GetValues<MonsterType>())
             {
                 if (name.Contains(monsterType.ToString(), StringComparison.OrdinalIgnoreCase))
@@ -180,18 +174,5 @@ namespace MCTG.Data.Repositories
 
             throw new ArgumentException($"Could not determine monster type from name: {name}");
         }
-
-        // private MonsterType DetermineMonsterType(string name)
-        // {
-        //     if (name.Contains("Goblin")) return MonsterType.Goblin;
-        //     if (name.Contains("Dragon")) return MonsterType.Dragon;
-        //     if (name.Contains("Wizard")) return MonsterType.Wizard;
-        //     if (name.Contains("Ork")) return MonsterType.Ork;
-        //     if (name.Contains("Knight")) return MonsterType.Knight;
-        //     if (name.Contains("Kraken")) return MonsterType.Kraken;
-        //     if (name.Contains("FireElf")) return MonsterType.FireElf;
-
-        //     return MonsterType.Goblin; // Default type
-        // }
     }
 }

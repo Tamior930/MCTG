@@ -34,7 +34,11 @@ namespace MCTG.Presentation.Controllers
             if (trade == null)
                 return CreateResponse(400, error);
 
-            return _tradingService.CreateTradingDeal(user, trade);
+            var result = _tradingService.CreateTradingDeal(user, trade);
+
+            return result.StartsWith("Error")
+                ? CreateResponse(400, result)
+                : CreateResponse(201, result);
         }
 
         public string DeleteTradingDeal(string authToken, string tradingId)
@@ -66,33 +70,30 @@ namespace MCTG.Presentation.Controllers
 
         public string ExecuteTrade(string authToken, string tradingId, string body)
         {
-            // 1. Authenticate user
             var (user, error) = AuthenticateUser(authToken);
             if (user == null)
                 return error;
 
-            // 2. Parse the offered card from request body
-            var card = DeserializeBody<Card>(body, out error);
-            if (card == null)
-                return CreateResponse(400, error);
+            var request = DeserializeBody<Dictionary<string, int>>(body, out error);
+            if (request == null || !request.ContainsKey("Id"))
+                return CreateResponse(400, "Invalid request format. Expected: {\"Id\": cardId}");
+
+            int offeredCardId = request["Id"];
 
             try
             {
-                // 3. Get the trade
                 var trade = _tradingService.GetTradingDealById(tradingId);
                 if (trade == null)
                     return CreateResponse(404, "Trading deal not found");
 
-                // 4. Verify user is not trading with themselves
                 if (trade.UserId == user.Id)
                     return CreateResponse(403, "You cannot trade with yourself");
 
-                // 5. Execute the trade
-                var result = _tradingService.ExecuteTrade(tradingId, card.Id, user.Id);
+                var result = _tradingService.ExecuteTrade(tradingId, offeredCardId, user.Id);
 
                 return result.StartsWith("Error")
                     ? CreateResponse(400, result)
-                    : CreateResponse(200, "Trading deal successfully executed");
+                    : CreateResponse(200, result);
             }
             catch (Exception ex)
             {

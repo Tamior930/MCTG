@@ -26,26 +26,22 @@ namespace MCTG.Presentation
             _clientThreads = new List<Thread>();
             _isServerRunning = false;
 
-            // Initialize dependencies
             _router = InitializeDependencies();
         }
 
         private Router InitializeDependencies()
         {
-            // Initialize repositories
             UserRepository userRepository = new UserRepository();
             CardRepository cardRepository = new CardRepository();
             DeckRepository deckRepository = new DeckRepository();
             TradeRepository tradeRepository = new TradeRepository();
 
-            // Initialize services
             AuthService authService = new AuthService(userRepository);
             UserService userService = new UserService(userRepository);
             CardService cardService = new CardService(userRepository, cardRepository, deckRepository);
             BattleService battleService = new BattleService(deckRepository, userRepository, cardRepository);
             TradingService tradingService = new TradingService(tradeRepository, cardRepository, deckRepository);
 
-            // Initialize controllers
             AuthController authController = new AuthController(authService, userService);
             UserController userController = new UserController(userService, authService, cardService);
             BattleController battleController = new BattleController(battleService, userService, cardService);
@@ -86,15 +82,13 @@ namespace MCTG.Presentation
         {
             try
             {
-                using (client) // This ensures the client is properly disposed
+                using (client)
                 using (var writer = new StreamWriter(client.GetStream()) { AutoFlush = true })
                 using (var reader = new StreamReader(client.GetStream()))
                 {
-                    // Set timeout to prevent hanging
-                    client.ReceiveTimeout = 30000; // 30 seconds
-                    client.SendTimeout = 30000;    // 30 seconds
+                    client.ReceiveTimeout = 30000;
+                    client.SendTimeout = 30000;
 
-                    // Process client requests
                     ProcessClientRequests(reader, writer);
                 }
             }
@@ -110,24 +104,20 @@ namespace MCTG.Presentation
             {
                 try
                 {
-                    // Read the incoming request
                     string rawRequest = ReadRequest(reader);
                     if (string.IsNullOrEmpty(rawRequest)) break;
 
                     Console.WriteLine($"\nReceived Request:\n{rawRequest}");
 
-                    // Process the request
                     HttpRequest request = _requestParser.Parse(rawRequest);
                     HttpResponse response = _router.RouteRequest(request);
 
-                    // Send the response
                     string rawResponse = _responseParser.CreateResponse(response);
                     Console.WriteLine($"\nSending Response:\n{rawResponse}");
                     writer.Write(rawResponse);
                 }
                 catch (IOException)
                 {
-                    // Client probably disconnected
                     break;
                 }
                 catch (Exception ex)
@@ -140,19 +130,16 @@ namespace MCTG.Presentation
 
         private void CleanupCompletedThreads()
         {
-            // Remove threads that have finished
             _clientThreads.RemoveAll(thread => !thread.IsAlive);
         }
 
         public void Stop()
         {
-            // Stop accepting new connections
             _isServerRunning = false;
             _listener.Stop();
 
             Console.WriteLine("Shutting down server...");
 
-            // Wait for all client threads to finish (with timeout)
             foreach (Thread thread in _clientThreads)
             {
                 if (thread.IsAlive)
@@ -169,10 +156,9 @@ namespace MCTG.Presentation
         {
             StringBuilder requestBuilder = new StringBuilder();
 
-            // Set read timeout
             if (reader.BaseStream is NetworkStream networkStream)
             {
-                networkStream.ReadTimeout = 30000; // 30 seconds timeout
+                networkStream.ReadTimeout = 30000;
             }
 
             try
@@ -183,7 +169,6 @@ namespace MCTG.Presentation
                     requestBuilder.AppendLine(line);
                 }
 
-                // Read body if present
                 if (requestBuilder.ToString().Contains("Content-Length:"))
                 {
                     int contentLength = GetContentLength(requestBuilder.ToString());
@@ -199,7 +184,6 @@ namespace MCTG.Presentation
             }
             catch (IOException)
             {
-                // Handle timeout or disconnection
                 return string.Empty;
             }
         }

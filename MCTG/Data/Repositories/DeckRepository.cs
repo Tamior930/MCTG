@@ -37,14 +37,12 @@ namespace MCTG.Data.Repositories
 
         private Card CreateCardFromDatabaseRow(NpgsqlDataReader reader)
         {
-            // Get basic card info from database
             int id = reader.GetInt32(reader.GetOrdinal("id"));
             string name = reader.GetString(reader.GetOrdinal("name"));
             int damage = reader.GetInt32(reader.GetOrdinal("damage"));
             ElementType element = Enum.Parse<ElementType>(reader.GetString(reader.GetOrdinal("element_type")));
             string cardType = reader.GetString(reader.GetOrdinal("card_type"));
 
-            // Create either a Monster or Spell card
             if (cardType == "Monster")
             {
                 MonsterType monsterType = Enum.Parse<MonsterType>(reader.GetString(reader.GetOrdinal("monster_type")));
@@ -67,7 +65,6 @@ namespace MCTG.Data.Repositories
 
             try
             {
-                // First, remove all cards from user's deck
                 using var clearCommand = connection.CreateCommand();
                 clearCommand.CommandText = @"
                     UPDATE cards 
@@ -76,7 +73,6 @@ namespace MCTG.Data.Repositories
                 clearCommand.Parameters.AddWithValue("@userId", userId);
                 clearCommand.ExecuteNonQuery();
 
-                // Then, add new cards to deck with order
                 for (int i = 0; i < cards.Count; i++)
                 {
                     using var updateCommand = connection.CreateCommand();

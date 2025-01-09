@@ -17,7 +17,6 @@ namespace MCTG.Presentation.Utils
 
     public class HttpRequestParser
     {
-        //Parse HTTP Requests
         public HttpRequest Parse(string rawRequest)
         {
             HttpRequest request = new HttpRequest()
@@ -28,20 +27,18 @@ namespace MCTG.Presentation.Utils
             };
             string[] lines = rawRequest.Split("\r\n");
 
-            // Parse the first line for the HTTP method and path
             string[] requestLine = lines[0].Split(' ');
             request.Method = requestLine[0];
             request.Path = requestLine[1];
 
-            // Parse headers
             int i = 1;
             while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
             {
                 string[] header = lines[i].Split(": ");
-                if (header.Length == 2) // Check if we have a valid header (name and value)
+                if (header.Length == 2)
                 {
-                    string headerName = header[0];  // Name of the header
-                    string headerValue = header[1]; // Value of the header
+                    string headerName = header[0];
+                    string headerValue = header[1];
 
                     request.Headers.Add(headerName, headerValue);
                 }
@@ -49,7 +46,6 @@ namespace MCTG.Presentation.Utils
             }
             i--;
 
-            // Body
             var body = new StringBuilder();
             while (i < lines.Length && !string.IsNullOrWhiteSpace(lines[i]))
             {
