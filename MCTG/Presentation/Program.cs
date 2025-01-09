@@ -1,8 +1,8 @@
 ﻿using MCTG.Data;
 
-namespace MCTG.PresentationLayer
+namespace MCTG.Presentation
 {
-    internal class Program
+    public class Program
     {
         static void Main(string[] args)
         {
@@ -17,7 +17,6 @@ namespace MCTG.PresentationLayer
             Console.CancelKeyPress += (sender, e) =>
             {
                 e.Cancel = true; // Prevent immediate termination
-                Console.WriteLine("\nShutting down server...");
                 server.Stop();
             };
 

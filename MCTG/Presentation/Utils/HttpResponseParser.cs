@@ -1,10 +1,10 @@
-﻿namespace MCTG.PresentationLayer.Utils
+﻿namespace MCTG.Presentation.Utils
 {
     public class HttpResponse
     {
         public int StatusCode { get; set; }
-        public string StatusDescription { get; set; }
-        public string Body { get; set; }
+        public required string StatusDescription { get; set; }
+        public required string Body { get; set; }
     }
 
     public class HttpResponseParser

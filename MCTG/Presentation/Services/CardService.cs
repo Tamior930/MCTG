@@ -1,7 +1,7 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using MCTG.Business.Models;
 using MCTG.Data.Interfaces;
 
-namespace MCTG.PresentationLayer.Services
+namespace MCTG.Presentation.Services
 {
     public class CardService
     {
@@ -26,12 +26,12 @@ namespace MCTG.PresentationLayer.Services
             if (user.Coins < PACKAGE_COST)
                 return "Error: Insufficient coins";
 
-            var package = _cardRepository.GetRandomCardsForPackage(PACKAGE_SIZE);
-            if (package.Count != PACKAGE_SIZE)
-                return "Error: Failed to create package";
-
             try
             {
+                var package = _cardRepository.GetRandomCardsForPackage(PACKAGE_SIZE);
+                if (package.Count != PACKAGE_SIZE)
+                    return "Error: Failed to create package";
+
                 if (_userRepository.UpdateUserCoins(user.Id, -PACKAGE_COST))
                 {
                     user.UpdateCoins(-PACKAGE_COST);
@@ -74,17 +74,29 @@ namespace MCTG.PresentationLayer.Services
                 return "Error: Deck must contain exactly 4 cards";
             }
 
-            var userDeck = _deckRepository.GetDeckCards(user.Id);
+            // 2. Verify card ownership and get card objects
+            var selectedCards = new List<Card>();
+            foreach (var cardId in cardIds)
+            {
+                var card = _cardRepository.GetCardById(cardId);
+                if (card == null)
+                    return "Error: One or more cards not found";
 
-            // 4. Save the deck
+                if (!_cardRepository.ValidateCardOwnership(cardId, user.Id))
+                    return "Error: You don't own one or more of these cards";
+
+                selectedCards.Add(card);
+            }
+
+            // 3. Save the deck
             try
             {
-                if (!_deckRepository.SaveDeck(user.Id, userDeck))
+                if (!_deckRepository.SaveDeck(user.Id, selectedCards))
                 {
                     return "Error: Failed to save deck";
                 }
                 // Update in-memory deck
-                user.Deck.SetDeck(userDeck);
+                user.Deck.SetDeck(selectedCards);
 
                 return "Deck configured successfully";
             }

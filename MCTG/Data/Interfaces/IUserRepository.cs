@@ -1,4 +1,4 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using MCTG.Business.Models;
 
 namespace MCTG.Data.Interfaces
 {
@@ -8,7 +8,7 @@ namespace MCTG.Data.Interfaces
         void AddUser(User user);
         User GetUserByToken(string authToken);
         User GetUserByUsername(string username);
-        bool UpdateUserProfile(string authToken, UserProfile profile);
+        bool UpdateUserProfile(int userId, UserProfile profile);
         // User MapUserFromDatabase(NpgsqlDataReader reader);
 
         // User Stats and Currency

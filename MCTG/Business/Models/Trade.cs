@@ -1,4 +1,4 @@
-namespace MCTG.BusinessLayer.Models
+namespace MCTG.Business.Models
 {
     public class Trade
     {

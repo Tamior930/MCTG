@@ -1,4 +1,4 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using MCTG.Business.Models;
 using MCTG.Data.Interfaces;
 using Npgsql;
 
@@ -86,34 +86,31 @@ namespace MCTG.Data.Repositories
             return reader.Read() ? MapUserFromDatabase(reader) : null!;
         }
 
-        public bool UpdateUserProfile(string authToken, UserProfile profile)
+        public bool UpdateUserProfile(int userId, UserProfile profile)
         {
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
-            using var transaction = connection.BeginTransaction();
+            using var command = connection.CreateCommand();
+
+            command.CommandText = @"
+                UPDATE users 
+                SET bio = @bio, image = @image 
+                WHERE id = @userId
+                RETURNING id";
+
+            command.Parameters.AddWithValue("@userId", userId);
+            command.Parameters.AddWithValue("@bio", profile.Bio);
+            command.Parameters.AddWithValue("@image", profile.Image);
 
             try
             {
-                using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    UPDATE users 
-                    SET bio = @bio,
-                        image = @image
-                    WHERE token = @token
-                    AND token_expiry > CURRENT_TIMESTAMP";
-
-                command.Parameters.AddWithValue("@token", authToken);
-                command.Parameters.AddWithValue("@bio", profile.Bio ?? "");
-                command.Parameters.AddWithValue("@image", profile.Image ?? "");
-
-                int rowsAffected = command.ExecuteNonQuery();
-                transaction.Commit();
-                return rowsAffected > 0;
+                var result = command.ExecuteScalar();
+                return result != null;
             }
             catch (Exception ex)
             {
-                transaction.Rollback();
-                throw new Exception($"Failed to update user profile: {ex.Message}");
+                Console.WriteLine($"Error updating profile: {ex.Message}");
+                return false;
             }
         }
 
@@ -185,6 +182,12 @@ namespace MCTG.Data.Repositories
                 reader.GetInt32(reader.GetOrdinal("wins")),
                 reader.GetInt32(reader.GetOrdinal("losses"))
             );
+
+            var profile = new UserProfile(
+                reader.IsDBNull(reader.GetOrdinal("bio")) ? "" : reader.GetString(reader.GetOrdinal("bio")),
+                reader.IsDBNull(reader.GetOrdinal("image")) ? "" : reader.GetString(reader.GetOrdinal("image"))
+            );
+            user.Profile = profile;
 
             if (!reader.IsDBNull(reader.GetOrdinal("token")))
             {

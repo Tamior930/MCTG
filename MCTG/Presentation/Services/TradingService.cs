@@ -1,7 +1,7 @@
-using MCTG.BusinessLayer.Models;
+using MCTG.Business.Models;
 using MCTG.Data.Interfaces;
 
-namespace MCTG.PresentationLayer.Services
+namespace MCTG.Presentation.Services
 {
     public class TradingService
     {

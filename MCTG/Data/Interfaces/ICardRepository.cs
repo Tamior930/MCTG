@@ -1,14 +1,14 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using MCTG.Business.Models;
 
 namespace MCTG.Data.Interfaces
 {
     public interface ICardRepository
     {
         // Basic CRUD
-        void UpdateCardOwnership(Card card, int userId);
+        bool UpdateCardOwnership(Card card, int newUserId);
         bool ValidateCardOwnership(int cardId, int userId);
         // void RemoveCard(int cardId);
-        Card GetCardById(int cardId);
+        Card? GetCardById(int cardId);
         // bool UpdateCardOwner(int cardId, int newUserId);
 
         // // Card Retrieval
@@ -19,7 +19,5 @@ namespace MCTG.Data.Interfaces
         // // Filtered Retrieval
         // // List<Card> GetCardsByType(CardType cardType, int userId);
         // // List<Card> GetCardsByElement(ElementType elementType, int userId);
-
-
     }
 }

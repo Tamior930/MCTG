@@ -1,7 +1,7 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using MCTG.Business.Models;
 using MCTG.Data.Interfaces;
 
-namespace MCTG.PresentationLayer.Services
+namespace MCTG.Presentation.Services
 {
     public class UserService
     {
@@ -12,7 +12,7 @@ namespace MCTG.PresentationLayer.Services
             _userRepository = userRepository;
         }
 
-        public User GetUserByToken(string authToken)
+        public User? GetUserByToken(string authToken)
         {
             if (string.IsNullOrEmpty(authToken))
             {
@@ -22,13 +22,9 @@ namespace MCTG.PresentationLayer.Services
             return _userRepository.GetUserByToken(authToken);
         }
 
-        public bool UpdateUserProfile(string authToken, UserProfile newProfile)
+        public bool UpdateUserProfile(int userId, UserProfile newProfile)
         {
-            var user = _userRepository.GetUserByToken(authToken);
-            if (user == null)
-                return false;
-
-            return _userRepository.UpdateUserProfile(authToken, newProfile);
+            return _userRepository.UpdateUserProfile(userId, newProfile);
         }
 
         public List<User> GetScoreboard()

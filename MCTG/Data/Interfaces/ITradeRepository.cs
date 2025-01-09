@@ -1,4 +1,4 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using MCTG.Business.Models;
 
 namespace MCTG.Data.Interfaces
 {

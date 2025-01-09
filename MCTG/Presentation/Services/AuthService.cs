@@ -1,7 +1,7 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using MCTG.Business.Models;
 using MCTG.Data.Interfaces;
 
-namespace MCTG.PresentationLayer.Services
+namespace MCTG.Presentation.Services
 {
     public class AuthService
     {
@@ -24,7 +24,7 @@ namespace MCTG.PresentationLayer.Services
             return true; // Registration successful
         }
 
-        public Token Login(string username, string password)
+        public Token? Login(string username, string password)
         {
             User user = _userRepository.GetUserByUsername(username);
             if (user != null && user.Password == password)

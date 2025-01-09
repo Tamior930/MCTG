@@ -1,11 +1,11 @@
-﻿using MCTG.BusinessLayer.Models;
+﻿using MCTG.Business.Models;
 
-namespace MCTG.BusinessLayer.Interfaces
+namespace MCTG.Business.Interfaces
 {
     public interface ICard
     {
         int Id { get; set; }
-        string Name { get; }
+        string Name { get; set; }
         int Damage { get; }
         CardType Type { get; }
         ElementType ElementType { get; }

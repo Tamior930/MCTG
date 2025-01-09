@@ -1,14 +1,7 @@
-﻿using MCTG.BusinessLayer.Interfaces;
+﻿using MCTG.Business.Interfaces;
 
-namespace MCTG.BusinessLayer.Models
+namespace MCTG.Business.Models
 {
-    public enum ElementType
-    {
-        Normal,
-        Fire,
-        Water
-    }
-
     public class SpellCard : Card
     {
         public SpellCard(int id, string name, int damage, ElementType elementType)

@@ -1,47 +1,80 @@
 ﻿using System.Collections.Concurrent;
 using System.Text;
-using MCTG.BusinessLayer.Models;
+using MCTG.Business.Models;
 using MCTG.Data.Interfaces;
 
-namespace MCTG.PresentationLayer.Services
+namespace MCTG.Presentation.Services
 {
     public class BattleService
     {
         private readonly IDeckRepository _deckRepository;
-        private static readonly ConcurrentQueue<int> _waitingPlayers = new ConcurrentQueue<int>();
+        private readonly IUserRepository _userRepository;
+        private readonly ICardRepository _cardRepository;
+        private static readonly ConcurrentQueue<BattleRequest> _waitingPlayers = new ConcurrentQueue<BattleRequest>();
         private const int MAX_ROUNDS = 100;
 
-        public BattleService(IDeckRepository deckRepository)
+        public class BattleRequest
         {
-            _deckRepository = deckRepository;
-        }
+            public int UserId { get; set; }
+            public string Username { get; set; }
+            public List<Card> Deck { get; set; }
+            public DateTime Timestamp { get; set; }
 
-        public string HandleBattle(int userId)
-        {
-            // 1. Check if there's already a waiting player
-            if (_waitingPlayers.TryDequeue(out int opponentId))
+            public BattleRequest(int userId, string username, List<Card> deck)
             {
-                if (opponentId == userId)
-                {
-                    _waitingPlayers.Enqueue(opponentId); // Put them back in queue
-                    return "Error: Cannot battle against yourself";
-                }
-                return ExecuteBattle(userId, opponentId);
+                UserId = userId;
+                Username = username;
+                Deck = deck;
+                Timestamp = DateTime.Now;
             }
 
-            // 2. No opponent available, add user to waiting queue
-            _waitingPlayers.Enqueue(userId);
-            return "Error: No opponent available. Added to waiting queue.";
+            public bool IsExpired() => (DateTime.Now - Timestamp).TotalMinutes > 5;
         }
 
-        private string ExecuteBattle(int player1Id, int player2Id)
+        public BattleService(IDeckRepository deckRepository, IUserRepository userRepository, ICardRepository cardRepository)
         {
-            var player1Deck = new List<Card>(_deckRepository.GetDeckCards(player1Id));
-            var player2Deck = new List<Card>(_deckRepository.GetDeckCards(player2Id));
+            _deckRepository = deckRepository;
+            _userRepository = userRepository;
+            _cardRepository = cardRepository;
+        }
+
+        public string HandleBattle(User user)
+        {
+            // Validate deck
+            var userDeck = _deckRepository.GetDeckCards(user.Id);
+            if (userDeck.Count != 4)
+                return "Error: Invalid deck configuration";
+
+            // Clean expired requests
+            CleanupExpiredRequests();
+
+            // Try to find opponent
+            if (_waitingPlayers.TryDequeue(out var opponent))
+            {
+                if (opponent.UserId == user.Id)
+                {
+                    _waitingPlayers.Enqueue(opponent); // Put back in queue
+                    return "Error: Cannot battle against yourself";
+                }
+                return ExecuteBattle(
+                    new BattleRequest(user.Id, user.Username, userDeck),
+                    opponent
+                );
+            }
+
+            // No opponent found, add to queue
+            _waitingPlayers.Enqueue(new BattleRequest(user.Id, user.Username, userDeck));
+            return "Waiting for opponent...";
+        }
+
+        private string ExecuteBattle(BattleRequest player1, BattleRequest player2)
+        {
             var battleLog = new StringBuilder();
             var random = new Random();
+            var player1Deck = new List<Card>(player1.Deck);
+            var player2Deck = new List<Card>(player2.Deck);
 
-            battleLog.AppendLine("Battle started!");
+            battleLog.AppendLine($"Battle: {player1.Username} vs {player2.Username}");
             int roundCount = 0;
 
             while (player1Deck.Any() && player2Deck.Any() && roundCount < MAX_ROUNDS)
@@ -49,72 +82,86 @@ namespace MCTG.PresentationLayer.Services
                 roundCount++;
                 battleLog.AppendLine($"\nRound {roundCount}:");
 
-                // Select random cards for the round
-                var player1Card = player1Deck[random.Next(player1Deck.Count)];
-                var player2Card = player2Deck[random.Next(player2Deck.Count)];
+                // Select random cards
+                var card1 = player1Deck[random.Next(player1Deck.Count)];
+                var card2 = player2Deck[random.Next(player2Deck.Count)];
 
-                // Calculate damages
-                double damage1 = player1Card.CalculateDamage(player2Card);
-                double damage2 = player2Card.CalculateDamage(player1Card);
+                // Log the cards being played
+                battleLog.AppendLine($"{player1.Username}'s {card1.Name} ({card1.Damage}) vs {player2.Username}'s {card2.Name} ({card2.Damage})");
 
-                // Log the round
-                battleLog.AppendLine($"Player 1: {player1Card.Name} ({damage1} damage) vs Player 2: {player2Card.Name} ({damage2} damage)");
+                // Calculate damage using the cards' built-in logic
+                double damage1 = card1.CalculateDamage(card2);
+                double damage2 = card2.CalculateDamage(card1);
 
-                // Determine round winner and transfer cards
+                battleLog.AppendLine($"Calculated Damage: {damage1} vs {damage2}");
+
+                // Determine round winner
                 if (damage1 > damage2)
                 {
-                    battleLog.AppendLine("Player 1 wins the round!");
-                    TransferCard(player2Card, player2Deck, player1Deck);
+                    battleLog.AppendLine($"{player1.Username} wins round with {card1.Name}!");
+                    TransferCard(card2, player2Deck, player1Deck, player1, player2);
                 }
                 else if (damage2 > damage1)
                 {
-                    battleLog.AppendLine("Player 2 wins the round!");
-                    TransferCard(player1Card, player1Deck, player2Deck);
+                    battleLog.AppendLine($"{player2.Username} wins round with {card2.Name}!");
+                    TransferCard(card1, player1Deck, player2Deck, player2, player1);
                 }
                 else
                 {
-                    battleLog.AppendLine("Round ended in a draw!");
+                    battleLog.AppendLine("Round is a draw!");
+                }
+
+                battleLog.AppendLine($"Cards remaining - {player1.Username}: {player1Deck.Count}, {player2.Username}: {player2Deck.Count}");
+            }
+
+            // Determine battle winner and update stats
+            UpdateBattleResults(player1, player2, player1Deck.Count, player2Deck.Count);
+
+            // Add final battle result to log
+            if (player1Deck.Count > player2Deck.Count)
+                battleLog.AppendLine($"\nBattle Winner: {player1.Username}!");
+            else if (player2Deck.Count > player1Deck.Count)
+                battleLog.AppendLine($"\nBattle Winner: {player2.Username}!");
+            else
+                battleLog.AppendLine("\nBattle ended in a draw!");
+
+            return battleLog.ToString();
+        }
+
+        private bool TransferCard(Card card, List<Card> fromDeck, List<Card> toDeck, BattleRequest fromPlayer, BattleRequest toPlayer)
+        {
+            if (fromDeck.Remove(card))
+            {
+                if (_cardRepository.UpdateCardOwnership(card, toPlayer.UserId))
+                {
+                    toDeck.Add(card);
+                    return true;
                 }
             }
-
-            // Determine battle winner
-            string result = DetermineBattleResult(player1Deck, player2Deck, roundCount, battleLog);
-
-            // Save updated decks
-            _deckRepository.SaveDeck(player1Id, player1Deck);
-            _deckRepository.SaveDeck(player2Id, player2Deck);
-
-            return result;
+            return false;
         }
 
-        private void TransferCard(Card card, List<Card> fromDeck, List<Card> toDeck)
+        private void UpdateBattleResults(BattleRequest player1, BattleRequest player2, int deck1Count, int deck2Count)
         {
-            fromDeck.Remove(card);
-            toDeck.Add(card);
+            if (deck1Count == deck2Count) return; // Draw, no stats update
+
+            bool player1Won = deck1Count > deck2Count;
+            _userRepository.UpdateUserStats(player1.UserId.ToString(), player1Won);
+            _userRepository.UpdateUserStats(player2.UserId.ToString(), !player1Won);
         }
 
-        private string DetermineBattleResult(List<Card> deck1, List<Card> deck2, int rounds, StringBuilder log)
+        private void CleanupExpiredRequests()
         {
-            if (rounds >= MAX_ROUNDS)
+            var currentRequests = new List<BattleRequest>();
+            while (_waitingPlayers.TryDequeue(out var request))
             {
-                log.AppendLine("\nBattle ended in a draw (maximum rounds reached)");
-                return log.ToString();
+                if (!request.IsExpired())
+                    currentRequests.Add(request);
             }
-
-            if (!deck1.Any())
+            foreach (var request in currentRequests)
             {
-                log.AppendLine("\nPlayer 2 wins the battle!");
-                return log.ToString();
+                _waitingPlayers.Enqueue(request);
             }
-
-            if (!deck2.Any())
-            {
-                log.AppendLine("\nPlayer 1 wins the battle!");
-                return log.ToString();
-            }
-
-            log.AppendLine("\nBattle ended in a draw");
-            return log.ToString();
         }
     }
 }

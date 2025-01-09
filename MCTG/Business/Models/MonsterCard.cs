@@ -1,18 +1,7 @@
-﻿using MCTG.BusinessLayer.Interfaces;
+﻿using MCTG.Business.Interfaces;
 
-namespace MCTG.BusinessLayer.Models
+namespace MCTG.Business.Models
 {
-    public enum MonsterType
-    {
-        Goblin,
-        Dragon,
-        Wizard,
-        Ork,
-        Knight,
-        Kraken,
-        FireElf
-    }
-
     public class MonsterCard : Card
     {
         public MonsterType MonsterType { get; private set; }
@@ -20,6 +9,7 @@ namespace MCTG.BusinessLayer.Models
         public MonsterCard(int id, string name, int damage, ElementType elementType, MonsterType monsterType)
             : base(id, name, damage, elementType, CardType.Monster)
         {
+            MonsterType = monsterType;
         }
 
         public override double CalculateDamage(ICard opponent)

@@ -1,6 +1,6 @@
-﻿using MCTG.PresentationLayer.Services;
+﻿using MCTG.Presentation.Services;
 
-namespace MCTG.PresentationLayer.Controller
+namespace MCTG.Presentation.Controllers
 {
     public class AuthController : BaseController
     {

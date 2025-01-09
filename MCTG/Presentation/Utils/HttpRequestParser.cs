@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace MCTG.PresentationLayer.Utils
+namespace MCTG.Presentation.Utils
 {
     public class HttpRequest
     {

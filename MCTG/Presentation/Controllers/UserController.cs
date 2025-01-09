@@ -1,7 +1,7 @@
-﻿using MCTG.BusinessLayer.Models;
-using MCTG.PresentationLayer.Services;
+﻿using MCTG.Business.Models;
+using MCTG.Presentation.Services;
 
-namespace MCTG.PresentationLayer.Controller
+namespace MCTG.Presentation.Controllers
 {
     public class UserController : BaseController
     {
@@ -150,7 +150,7 @@ namespace MCTG.PresentationLayer.Controller
                 if (profile == null)
                     return CreateResponse(400, error);
 
-                return _userService.UpdateUserProfile(authToken, profile)
+                return _userService.UpdateUserProfile(user.Id, profile)
                     ? CreateResponse(200, "User data updated successfully")
                     : CreateResponse(404, "User not found");
             }

@@ -1,4 +1,4 @@
-using MCTG.BusinessLayer.Models;
+using MCTG.Business.Models;
 using MCTG.Data.Interfaces;
 using Npgsql;
 
@@ -7,6 +7,7 @@ namespace MCTG.Data.Repositories
     public class DeckRepository : IDeckRepository
     {
         private readonly DatabaseHandler _databaseHandler;
+        private const int MAX_DECK_SIZE = 4;
 
         public DeckRepository()
         {
@@ -20,7 +21,10 @@ namespace MCTG.Data.Repositories
             connection.Open();
             using var command = connection.CreateCommand();
 
-            command.CommandText = "SELECT * FROM cards WHERE user_id = @userId AND in_deck = true";
+            command.CommandText = @"
+                SELECT * FROM cards 
+                WHERE user_id = @userId AND in_deck = true 
+                ORDER BY deck_order";
             command.Parameters.AddWithValue("@userId", userId);
 
             using var reader = command.ExecuteReader();
@@ -37,13 +41,13 @@ namespace MCTG.Data.Repositories
             int id = reader.GetInt32(reader.GetOrdinal("id"));
             string name = reader.GetString(reader.GetOrdinal("name"));
             int damage = reader.GetInt32(reader.GetOrdinal("damage"));
-            ElementType element = (ElementType)reader.GetInt32(reader.GetOrdinal("element_type"));
-            string cardType = reader.GetString(reader.GetOrdinal("type"));
+            ElementType element = Enum.Parse<ElementType>(reader.GetString(reader.GetOrdinal("element_type")));
+            string cardType = reader.GetString(reader.GetOrdinal("card_type"));
 
             // Create either a Monster or Spell card
             if (cardType == "Monster")
             {
-                MonsterType monsterType = (MonsterType)reader.GetInt32(reader.GetOrdinal("monster_type"));
+                MonsterType monsterType = Enum.Parse<MonsterType>(reader.GetString(reader.GetOrdinal("monster_type")));
                 return new MonsterCard(id, name, damage, element, monsterType);
             }
             else
@@ -54,6 +58,9 @@ namespace MCTG.Data.Repositories
 
         public bool SaveDeck(int userId, List<Card> cards)
         {
+            if (cards.Count != MAX_DECK_SIZE)
+                return false;
+
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
             using var transaction = connection.BeginTransaction();
@@ -62,15 +69,26 @@ namespace MCTG.Data.Repositories
             {
                 // First, remove all cards from user's deck
                 using var clearCommand = connection.CreateCommand();
-                clearCommand.CommandText = "UPDATE cards SET in_deck = false WHERE user_id = @userId";
+                clearCommand.CommandText = @"
+                    UPDATE cards 
+                    SET in_deck = false, deck_order = NULL 
+                    WHERE user_id = @userId";
                 clearCommand.Parameters.AddWithValue("@userId", userId);
                 clearCommand.ExecuteNonQuery();
 
-                // Then, add new cards to deck
-                using var updateCommand = connection.CreateCommand();
-                updateCommand.CommandText = "UPDATE cards SET in_deck = true WHERE id = ANY(@cardIds)";
-                updateCommand.Parameters.AddWithValue("@cardIds", cards.Select(c => c.Id).ToArray());
-                updateCommand.ExecuteNonQuery();
+                // Then, add new cards to deck with order
+                for (int i = 0; i < cards.Count; i++)
+                {
+                    using var updateCommand = connection.CreateCommand();
+                    updateCommand.CommandText = @"
+                        UPDATE cards 
+                        SET in_deck = true, deck_order = @order 
+                        WHERE id = @cardId AND user_id = @userId";
+                    updateCommand.Parameters.AddWithValue("@order", i + 1);
+                    updateCommand.Parameters.AddWithValue("@cardId", cards[i].Id);
+                    updateCommand.Parameters.AddWithValue("@userId", userId);
+                    updateCommand.ExecuteNonQuery();
+                }
 
                 transaction.Commit();
                 return true;

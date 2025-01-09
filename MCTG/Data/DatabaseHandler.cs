@@ -44,8 +44,8 @@ namespace MCTG.Data
                             losses INT DEFAULT 0,
                             
                             -- Profile Data
-                            bio TEXT,
-                            image VARCHAR(255)
+                            bio text,
+                            image text
                         );";
                     cmd.ExecuteNonQuery();
                 }
@@ -63,60 +63,21 @@ namespace MCTG.Data
                             damage INT NOT NULL,
                             element_type VARCHAR(20) NOT NULL,
                             card_type VARCHAR(10) NOT NULL,
+                            monster_type VARCHAR(20),
                             
                             -- Ownership & State
                             user_id INT REFERENCES users(id) ON DELETE SET NULL,
                             in_deck BOOLEAN DEFAULT false,
+                            deck_order INT,
                             
                             -- Constraints
-                            CONSTRAINT card_type_check CHECK (card_type IN ('Monster', 'Spell'))
-                        );
-
-                        -- Seed initial cards if table is empty
-                        INSERT INTO cards (name, damage, element_type, card_type, user_id, in_deck)
-                        SELECT * FROM (VALUES
-                            -- Fire Monster Cards
-                            ('FireDragon', 65, 'Fire', 'Monster', NULL, false),
-                            ('FireGoblin', 30, 'Fire', 'Monster', NULL, false),
-                            ('FireTroll', 40, 'Fire', 'Monster', NULL, false),
-                            ('FireElf', 25, 'Fire', 'Monster', NULL, false),
-                            ('FireDwarf', 35, 'Fire', 'Monster', NULL, false),
-
-                            -- Water Monster Cards
-                            ('WaterDragon', 60, 'Water', 'Monster', NULL, false),
-                            ('WaterGoblin', 25, 'Water', 'Monster', NULL, false),
-                            ('Kraken', 55, 'Water', 'Monster', NULL, false),
-                            ('WaterTroll', 35, 'Water', 'Monster', NULL, false),
-                            ('WaterElf', 22, 'Water', 'Monster', NULL, false),
-
-                            -- Normal Monster Cards
-                            ('Dragon', 55, 'Normal', 'Monster', NULL, false),
-                            ('Goblin', 28, 'Normal', 'Monster', NULL, false),
-                            ('Troll', 38, 'Normal', 'Monster', NULL, false),
-                            ('Knight', 35, 'Normal', 'Monster', NULL, false),
-                            ('Ork', 45, 'Normal', 'Monster', NULL, false),
-                            ('Wizard', 40, 'Normal', 'Monster', NULL, false),
-
-                            -- Fire Spell Cards
-                            ('FireSpell', 45, 'Fire', 'Spell', NULL, false),
-                            ('FireBall', 35, 'Fire', 'Spell', NULL, false),
-                            ('FireBlast', 25, 'Fire', 'Spell', NULL, false),
-                            ('FireStorm', 55, 'Fire', 'Spell', NULL, false),
-
-                            -- Water Spell Cards
-                            ('WaterSpell', 40, 'Water', 'Spell', NULL, false),
-                            ('WaterBlast', 35, 'Water', 'Spell', NULL, false),
-                            ('Tsunami', 50, 'Water', 'Spell', NULL, false),
-                            ('WaterBall', 30, 'Water', 'Spell', NULL, false),
-
-                            -- Normal Spell Cards
-                            ('RegularSpell', 28, 'Normal', 'Spell', NULL, false),
-                            ('NormalBlast', 35, 'Normal', 'Spell', NULL, false),
-                            ('EnergyBall', 40, 'Normal', 'Spell', NULL, false),
-                            ('MagicMissile', 25, 'Normal', 'Spell', NULL, false)
-                        ) AS seed_data(name, damage, element_type, card_type, user_id, in_deck)
-                        WHERE NOT EXISTS (SELECT 1 FROM cards LIMIT 1);";
-
+                            CONSTRAINT card_type_check CHECK (card_type IN ('Monster', 'Spell')),
+                            CONSTRAINT monster_type_check CHECK (
+                                (card_type = 'Monster' AND monster_type IS NOT NULL) OR
+                                (card_type = 'Spell' AND monster_type IS NULL)
+                            ),
+                            CONSTRAINT deck_order_range CHECK (deck_order IS NULL OR deck_order BETWEEN 1 AND 4)
+                        );";
                     cmd.ExecuteNonQuery();
                 }
 

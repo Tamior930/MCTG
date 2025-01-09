@@ -1,17 +1,13 @@
-﻿using MCTG.BusinessLayer.Interfaces;
+﻿using MCTG.Business.Interfaces;
 
-namespace MCTG.BusinessLayer.Models
+namespace MCTG.Business.Models
 {
-    public enum CardType
-    {
-        Monster,
-        Spell
-    }
-
     public abstract class Card : ICard
     {
+        private static readonly Random _random = new Random();
+
         public int Id { get; set; }
-        public string Name { get; private set; }
+        public string Name { get; set; }
         public int Damage { get; private set; }
         public CardType Type { get; private set; }
         public ElementType ElementType { get; private set; }
@@ -23,6 +19,29 @@ namespace MCTG.BusinessLayer.Models
             Damage = damage;
             ElementType = elementType;
             Type = type;
+        }
+
+        // Factory Method für Kartengenerierung
+        public static Card GenerateRandomCard()
+        {
+            bool isMonster = _random.Next(2) == 0;
+            int damage = _random.Next(10, 101); // 10-100 damage
+            ElementType elementType = (ElementType)_random.Next(3); // Fire, Water, or Normal
+
+            string name;
+            if (isMonster)
+            {
+                MonsterType monsterType = (MonsterType)_random.Next(Enum.GetValues<MonsterType>().Length);
+                // Generate name like "Water Goblin", "Fire Dragon", etc.
+                name = $"{elementType} {monsterType}";
+                return new MonsterCard(0, name, damage, elementType, monsterType);
+            }
+            else
+            {
+                // Generate name like "Water Spell", "Fire Spell", etc.
+                name = $"{elementType} Spell";
+                return new SpellCard(0, name, damage, elementType);
+            }
         }
 
         public virtual double CalculateDamage(ICard opponent)

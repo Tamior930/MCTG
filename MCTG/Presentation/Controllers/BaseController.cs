@@ -1,8 +1,8 @@
 using System.Text.Json;
-using MCTG.BusinessLayer.Models;
-using MCTG.PresentationLayer.Services;
+using MCTG.Business.Models;
+using MCTG.Presentation.Services;
 
-namespace MCTG.PresentationLayer.Controller
+namespace MCTG.Presentation.Controllers
 {
     public abstract class BaseController
     {

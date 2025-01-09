@@ -1,6 +1,6 @@
-﻿using MCTG.PresentationLayer.Services;
+﻿using MCTG.Presentation.Services;
 
-namespace MCTG.PresentationLayer.Controller
+namespace MCTG.Presentation.Controllers
 {
     public class BattleController : BaseController
     {
@@ -21,15 +21,15 @@ namespace MCTG.PresentationLayer.Controller
             if (user == null)
                 return error;
 
-            // 2. Check if user has a valid deck
-            var userDeck = _cardService.GetUserDeck(user.Id);
-            if (userDeck == null || !userDeck.Any())
-                return CreateResponse(400, "Error: Please configure your deck before battling");
-
             try
             {
                 // 3. Find or wait for opponent
-                var result = _battleService.HandleBattle(user.Id);
+                var result = _battleService.HandleBattle(user);
+
+                if (result.StartsWith("Error"))
+                    return CreateResponse(400, result);
+                if (result == "Waiting for opponent...")
+                    return CreateResponse(202, result);
 
                 // 4. Return battle results
                 return result.StartsWith("Error")
