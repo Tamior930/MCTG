@@ -13,12 +13,14 @@ namespace MCTG.Presentation.Controllers
             _userService = userService;
         }
 
+        // Creates formatted HTTP response with status code and message
         protected string CreateResponse(int statusCode, string message)
         {
             string statusDescription = GetStatusDescription(statusCode);
             return $"{statusCode} {statusDescription}\n{message}";
         }
 
+        // Maps HTTP status codes to descriptions
         protected string GetStatusDescription(int statusCode)
         {
             return statusCode switch
@@ -33,6 +35,7 @@ namespace MCTG.Presentation.Controllers
             };
         }
 
+        // Safely deserializes JSON request body
         protected T? DeserializeBody<T>(string body, out string error)
         {
             error = string.Empty;
@@ -47,11 +50,13 @@ namespace MCTG.Presentation.Controllers
             }
         }
 
+        // Serializes response data to JSON
         protected string SerializeResponse<T>(T data, bool indent = true)
         {
             return JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = indent });
         }
 
+        // Validates user authentication token
         protected (User? user, string response) AuthenticateUser(string authToken)
         {
             if (string.IsNullOrEmpty(authToken))

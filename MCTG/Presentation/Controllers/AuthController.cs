@@ -12,6 +12,7 @@ namespace MCTG.Presentation.Controllers
             _authService = authService;
         }
 
+        // Processes user registration requests
         public string Register(string body)
         {
             var credentials = DeserializeBody<Dictionary<string, string>>(body, out var error);
@@ -31,6 +32,7 @@ namespace MCTG.Presentation.Controllers
                 : CreateResponse(409, "User already exists");
         }
 
+        // Handles user login requests
         public string Login(string body)
         {
             var credentials = DeserializeBody<Dictionary<string, string>>(body, out var error);

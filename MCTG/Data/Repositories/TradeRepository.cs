@@ -13,6 +13,7 @@ namespace MCTG.Data.Repositories
             _databaseHandler = new DatabaseHandler();
         }
 
+        // Gets all active trading deals
         public List<Trade> GetAllTradingDeals()
         {
             var trades = new List<Trade>();
@@ -30,6 +31,7 @@ namespace MCTG.Data.Repositories
             return trades;
         }
 
+        // Maps database row to Trade object
         private Trade MapTradeFromDatabase(NpgsqlDataReader reader)
         {
             return new Trade(
@@ -44,6 +46,7 @@ namespace MCTG.Data.Repositories
             );
         }
 
+        // Creates a new trading deal
         public bool CreateTrade(Trade trade)
         {
             try
@@ -79,6 +82,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Checks if a card is part of any active trade
         public bool IsCardInTrade(int cardId)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -99,6 +103,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Retrieves a specific trade by ID
         public Trade GetTradeById(string tradingId)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -114,6 +119,7 @@ namespace MCTG.Data.Repositories
             return MapTradeFromDatabase(reader);
         }
 
+        // Marks a trade as deleted
         public bool DeleteTrade(string tradingId)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -137,6 +143,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Executes a trade between two users
         public bool ExecuteTrade(string tradingId, int offeredCardId, int newOwnerId)
         {
             using var connection = _databaseHandler.GetConnection();

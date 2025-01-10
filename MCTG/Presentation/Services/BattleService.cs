@@ -22,14 +22,18 @@ namespace MCTG.Presentation.Services
 
         public string HandleBattle(User user)
         {
+            // Get user's deck and validate it has exactly 4 cards
             var userDeck = _deckRepository.GetDeckCards(user.Id);
             if (userDeck.Count != 4)
                 return "Error: Invalid deck configuration";
 
+            // Remove any expired battle requests
             CleanupExpiredRequests();
 
+            // Try to find an opponent in the waiting queue
             if (_waitingPlayers.TryDequeue(out var opponent))
             {
+                // Prevent self-battles
                 if (opponent.UserId == user.Id)
                 {
                     _waitingPlayers.Enqueue(opponent);
@@ -41,6 +45,7 @@ namespace MCTG.Presentation.Services
                 );
             }
 
+            // No opponent found, add user to waiting queue
             _waitingPlayers.Enqueue(new BattleRequest(user.Id, user.Username, userDeck));
             return "Waiting for opponent...";
         }
@@ -49,27 +54,33 @@ namespace MCTG.Presentation.Services
         {
             var battleLog = new StringBuilder();
             var random = new Random();
+            // Create copies of decks to modify during battle
             var player1Deck = new List<Card>(player1.Deck);
             var player2Deck = new List<Card>(player2.Deck);
 
             battleLog.AppendLine($"Battle: {player1.Username} vs {player2.Username}");
             int roundCount = 0;
 
+            // Continue battle until a player runs out of cards or max rounds reached
             while (player1Deck.Any() && player2Deck.Any() && roundCount < MAX_ROUNDS)
             {
                 roundCount++;
                 battleLog.AppendLine($"\nRound {roundCount}:");
 
+                // Randomly select cards for battle
                 var card1 = player1Deck[random.Next(player1Deck.Count)];
                 var card2 = player2Deck[random.Next(player2Deck.Count)];
 
+                // Log the card matchup
                 battleLog.AppendLine($"{player1.Username}'s {card1.Name} ({card1.Damage}) vs {player2.Username}'s {card2.Name} ({card2.Damage})");
 
+                // Calculate effective damage considering special rules
                 double damage1 = card1.CalculateDamage(card2);
                 double damage2 = card2.CalculateDamage(card1);
 
                 battleLog.AppendLine($"Calculated Damage: {damage1} vs {damage2}");
 
+                // Determine round winner and handle card transfers
                 if (damage1 > damage2)
                 {
                     battleLog.AppendLine($"{player1.Username} wins round with {card1.Name}!");
@@ -85,11 +96,14 @@ namespace MCTG.Presentation.Services
                     battleLog.AppendLine("Round is a draw!");
                 }
 
+                // Log remaining cards for each player
                 battleLog.AppendLine($"Cards remaining - {player1.Username}: {player1Deck.Count}, {player2.Username}: {player2Deck.Count}");
             }
 
+            // Update player stats based on battle outcome
             UpdateBattleResults(player1, player2, player1Deck.Count, player2Deck.Count);
 
+            // Determine and log final battle winner
             if (player1Deck.Count > player2Deck.Count)
             {
                 battleLog.AppendLine($"\nBattle Winner: {player1.Username}!");
@@ -110,8 +124,10 @@ namespace MCTG.Presentation.Services
         {
             try
             {
+                // Transfer losing card to winner's deck and update database
                 if (TransferCard(losingCard, loserDeck, winnerDeck, winner))
                 {
+                    // Refresh winning card position in deck
                     winnerDeck.Remove(winningCard);
                     winnerDeck.Add(winningCard);
                 }
@@ -126,16 +142,20 @@ namespace MCTG.Presentation.Services
         {
             try
             {
+                // Remove card from loser's deck
                 if (!fromDeck.Remove(card))
                     return false;
 
+                // Update card ownership in database
                 if (_cardRepository.UpdateCardOwnership(card, toPlayer.UserId))
                 {
+                    // Add card to winner's deck
                     toDeck.Add(card);
                     return true;
                 }
                 else
                 {
+                    // Revert changes if database update fails
                     fromDeck.Add(card);
                     return false;
                 }
@@ -154,6 +174,7 @@ namespace MCTG.Presentation.Services
 
             try
             {
+                // Retrieve current user data
                 var user1 = _userRepository.GetUserById(player1.UserId);
                 var user2 = _userRepository.GetUserById(player2.UserId);
 
@@ -163,11 +184,14 @@ namespace MCTG.Presentation.Services
                     return;
                 }
 
+                // Determine winner and update stats accordingly
                 bool player1Won = deck1Count > deck2Count;
 
+                // Update stats in database
                 _userRepository.UpdateUserStats(user1.AuthToken.Value, player1Won);
                 _userRepository.UpdateUserStats(user2.AuthToken.Value, !player1Won);
 
+                // Update local user objects
                 if (player1Won)
                 {
                     user1.UpdateStats(true);
@@ -187,12 +211,19 @@ namespace MCTG.Presentation.Services
 
         private void CleanupExpiredRequests()
         {
+            // Create a list to hold the non-expired requests
             var currentRequests = new List<BattleRequest>();
+
+            // Dequeue all requests from the waiting queue
             while (_waitingPlayers.TryDequeue(out var request))
             {
+                // Check if the request is not expired
                 if (!request.IsExpired())
+                    // Add the non-expired request to the list
                     currentRequests.Add(request);
             }
+
+            // Re-enqueue all valid (non-expired) requests back into the waiting queue
             foreach (var request in currentRequests)
             {
                 _waitingPlayers.Enqueue(request);

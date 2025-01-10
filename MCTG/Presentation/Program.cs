@@ -11,9 +11,13 @@ namespace MCTG.Presentation
 
             HttpServer server = new HttpServer();
 
+            // Attach an event handler to handle the Ctrl+C (SIGINT) signal for graceful shutdown
             Console.CancelKeyPress += (sender, e) =>
             {
+                // Prevent the process from terminating immediately
                 e.Cancel = true;
+
+                // Stop the server gracefully
                 server.Stop();
             };
 

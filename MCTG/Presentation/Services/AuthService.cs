@@ -12,6 +12,7 @@ namespace MCTG.Presentation.Services
             _userRepository = userRepository;
         }
 
+        // Creates new user account
         public bool Register(string username, string password)
         {
             if (_userRepository.UserExists(username))
@@ -24,6 +25,7 @@ namespace MCTG.Presentation.Services
             return true;
         }
 
+        // Authenticates user and generates access token
         public Token? Login(string username, string password)
         {
             User user = _userRepository.GetUserByUsername(username);
@@ -41,22 +43,6 @@ namespace MCTG.Presentation.Services
                 }
             }
             return null;
-        }
-
-        public bool Logout(string authToken)
-        {
-            if (string.IsNullOrEmpty(authToken))
-            {
-                return false;
-            }
-
-            var user = _userRepository.GetUserByToken(authToken);
-            if (user != null)
-            {
-                var expiredToken = new Token(authToken, DateTime.Now.AddSeconds(-1));
-                return _userRepository.UpdateUserToken(user.Id, expiredToken);
-            }
-            return false;
         }
     }
 }

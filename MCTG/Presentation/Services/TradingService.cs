@@ -3,6 +3,7 @@ using MCTG.Data.Interfaces;
 
 namespace MCTG.Presentation.Services
 {
+    // Manages card trading between players
     public class TradingService
     {
         private readonly ITradeRepository _tradeRepository;
@@ -18,11 +19,13 @@ namespace MCTG.Presentation.Services
             _deckRepository = deckRepository;
         }
 
+        // Gets all active trading deals
         public List<Trade> GetTradingDeals()
         {
             return _tradeRepository.GetAllTradingDeals();
         }
 
+        // Creates new trading deal
         public string CreateTradingDeal(User user, Trade trade)
         {
             if (trade == null || trade.CardId <= 0)
@@ -59,6 +62,7 @@ namespace MCTG.Presentation.Services
             }
         }
 
+        // Removes existing trading deal
         public string DeleteTradingDeal(string tradingId)
         {
             try
@@ -74,11 +78,13 @@ namespace MCTG.Presentation.Services
             }
         }
 
+        // Gets specific trading deal by ID
         public Trade GetTradingDealById(string tradingId)
         {
             return _tradeRepository.GetTradeById(tradingId);
         }
 
+        // Processes trade execution between users
         public string ExecuteTrade(string tradingId, int offeredCardId, int newOwnerId)
         {
             if (!_cardRepository.ValidateCardOwnership(offeredCardId, newOwnerId))
@@ -107,11 +113,13 @@ namespace MCTG.Presentation.Services
             }
         }
 
+        // Validates if offered card meets trade requirements
         private bool ValidateTradeRequirements(int offeredCardId, Trade trade)
         {
             var offeredCard = _cardRepository.GetCardById(offeredCardId);
             if (offeredCard == null) return false;
 
+            // Check if the offered card type matches the required type for the trade
             if (!offeredCard.Type.ToString().Equals(trade.RequiredType, StringComparison.OrdinalIgnoreCase))
                 return false;
 

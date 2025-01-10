@@ -20,6 +20,7 @@ namespace MCTG.Presentation.Services
             _deckRepository = deckRepository;
         }
 
+        // Processes card package purchase
         public string PurchasePackage(User user)
         {
             if (user.Coins < PACKAGE_COST)
@@ -57,21 +58,25 @@ namespace MCTG.Presentation.Services
             }
         }
 
+        // Retrieves user's card collection
         public List<Card> GetUserCards(int userId)
         {
             return _cardRepository.GetAllCardsForUser(userId);
         }
 
+        // Gets user's current deck
         public List<Card> GetUserDeck(int userId)
         {
             return _deckRepository.GetDeckCards(userId);
         }
 
+        // Gets total number of cards in user's stack
         public int GetUserStackSize(int userId)
         {
             return _cardRepository.GetAllCardsForUser(userId).Count;
         }
 
+        // Updates user's deck configuration
         public string ConfigureDeck(User user, List<int> cardIds)
         {
             if (cardIds == null || cardIds.Count != DECK_SIZE)

@@ -14,6 +14,7 @@ namespace MCTG.Data.Repositories
             _databaseHandler = new DatabaseHandler();
         }
 
+        // Retrieves all cards in user's deck
         public List<Card> GetDeckCards(int userId)
         {
             var deckCards = new List<Card>();
@@ -35,6 +36,7 @@ namespace MCTG.Data.Repositories
             return deckCards;
         }
 
+        // Maps database row to Card object
         private Card CreateCardFromDatabaseRow(NpgsqlDataReader reader)
         {
             int id = reader.GetInt32(reader.GetOrdinal("id"));
@@ -54,6 +56,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Updates user's deck configuration
         public bool SaveDeck(int userId, List<Card> cards)
         {
             if (cards.Count != MAX_DECK_SIZE)
@@ -96,6 +99,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Checks if a card is currently in any deck
         public bool IsCardInDeck(int cardId)
         {
             using var connection = _databaseHandler.GetConnection();

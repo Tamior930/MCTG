@@ -13,6 +13,7 @@ namespace MCTG.Data.Repositories
             _databaseHandler = new DatabaseHandler();
         }
 
+        // Creates new user account
         public void AddUser(User user)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
@@ -48,6 +49,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Retrieves user by authentication token
         public User GetUserByToken(string authToken)
         {
             if (string.IsNullOrEmpty(authToken)) return null!;
@@ -73,6 +75,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Retrieves user by username
         public User GetUserByUsername(string username)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -86,6 +89,7 @@ namespace MCTG.Data.Repositories
             return reader.Read() ? MapUserFromDatabase(reader) : null!;
         }
 
+        // Updates user's profile information
         public bool UpdateUserProfile(int userId, UserProfile profile)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -114,6 +118,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Updates user's game statistics after battle
         public bool UpdateUserStats(string authToken, bool won)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -145,6 +150,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Updates user's coin balance
         public bool UpdateUserCoins(int userId, int amount)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -169,6 +175,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Maps database row to User object
         private User MapUserFromDatabase(NpgsqlDataReader reader)
         {
             var user = new User(
@@ -201,6 +208,7 @@ namespace MCTG.Data.Repositories
             return user;
         }
 
+        // Retrieves all users sorted by ELO rating
         public List<User> GetScoreboard()
         {
             using var connection = _databaseHandler.GetConnection();
@@ -225,6 +233,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Checks if username is already taken
         public bool UserExists(string username)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -245,6 +254,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Updates user's authentication token
         public bool UpdateUserToken(int userId, Token token)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -274,6 +284,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Retrieves user by ID
         public User GetUserById(int userId)
         {
             using var connection = _databaseHandler.GetConnection();

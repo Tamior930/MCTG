@@ -11,11 +11,13 @@ namespace MCTG.Data
             _connectionString = "Host=localhost;Port=5432;Username=mtcg_user;Password=mtcg_password;Database=mtcg_db";
         }
 
+        // Creates and returns a new database connection
         public NpgsqlConnection GetConnection()
         {
             return new NpgsqlConnection(_connectionString);
         }
 
+        // Sets up database schema if not exists
         public bool InitializeDatabase()
         {
             try
@@ -23,7 +25,7 @@ namespace MCTG.Data
                 using var conn = GetConnection();
                 conn.Open();
 
-                // 1. Users table: Identity -> Authentication -> Game Stats -> Profile
+                // Create users table with identity, auth, stats and profile columns
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
@@ -50,7 +52,7 @@ namespace MCTG.Data
                     cmd.ExecuteNonQuery();
                 }
 
-                // 2. Cards table: Identity -> Card Properties -> Ownership
+                // Create cards table with properties and ownership tracking
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
@@ -81,7 +83,7 @@ namespace MCTG.Data
                     cmd.ExecuteNonQuery();
                 }
 
-                // 3. Trades table: Identity -> Trade Details -> Requirements -> Status
+                // Create trades table for managing card trading
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"

@@ -13,6 +13,7 @@ namespace MCTG.Data.Repositories
             _databaseHandler = new DatabaseHandler();
         }
 
+        // Updates card ownership and resets deck status
         public bool UpdateCardOwnership(Card card, int newOwnerId)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -51,6 +52,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Retrieves a specific card by its ID
         public Card? GetCardById(int cardId)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -64,6 +66,7 @@ namespace MCTG.Data.Repositories
             return reader.Read() ? CreateCardFromDatabaseRow(reader) : null;
         }
 
+        // Gets all cards owned by a specific user
         public List<Card> GetAllCardsForUser(int userId)
         {
             var userCards = new List<Card>();
@@ -82,6 +85,7 @@ namespace MCTG.Data.Repositories
             return userCards;
         }
 
+        // Generates and stores random cards for a new package
         public List<Card> GetRandomCardsForPackage(int count)
         {
             var cards = new List<Card>();
@@ -130,6 +134,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Checks if a card belongs to a specific user
         public bool ValidateCardOwnership(int cardId, int userId)
         {
             using var connection = _databaseHandler.GetConnection();
@@ -143,6 +148,7 @@ namespace MCTG.Data.Repositories
             return Convert.ToInt32(command.ExecuteScalar()) > 0;
         }
 
+        // Maps database row to Card object
         private Card CreateCardFromDatabaseRow(NpgsqlDataReader reader)
         {
             int id = reader.GetInt32(reader.GetOrdinal("id"));
@@ -162,6 +168,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
+        // Extracts monster type from card name
         public MonsterType DetermineMonsterType(string name)
         {
             foreach (MonsterType monsterType in Enum.GetValues<MonsterType>())

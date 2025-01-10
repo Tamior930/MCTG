@@ -12,6 +12,7 @@ namespace MCTG.Presentation.Controllers
             _tradingService = tradingService;
         }
 
+        // Lists all available trading deals
         public string GetTradingDeals(string authToken)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -24,6 +25,7 @@ namespace MCTG.Presentation.Controllers
                 : CreateResponse(204, "No trading deals available");
         }
 
+        // Creates new trading deal
         public string CreateTradingDeal(string authToken, string body)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -41,6 +43,7 @@ namespace MCTG.Presentation.Controllers
                 : CreateResponse(201, result);
         }
 
+        // Removes existing trading deal
         public string DeleteTradingDeal(string authToken, string tradingId)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -68,6 +71,7 @@ namespace MCTG.Presentation.Controllers
             }
         }
 
+        // Processes trade execution between users
         public string ExecuteTrade(string authToken, string tradingId, string body)
         {
             var (user, error) = AuthenticateUser(authToken);

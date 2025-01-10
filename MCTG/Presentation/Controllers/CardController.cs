@@ -12,6 +12,7 @@ namespace MCTG.Presentation.Controllers
             _cardService = cardService;
         }
 
+        // Processes card package purchases
         public string AcquirePackage(string authToken)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -24,6 +25,7 @@ namespace MCTG.Presentation.Controllers
                 : CreateResponse(200, result);
         }
 
+        // Retrieves user's card collection
         public string GetUserCards(string authToken)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -38,6 +40,7 @@ namespace MCTG.Presentation.Controllers
             return CreateResponse(200, SerializeResponse(cards));
         }
 
+        // Gets user's current deck configuration
         public string GetUserDeck(string authToken)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -51,6 +54,7 @@ namespace MCTG.Presentation.Controllers
             return CreateResponse(200, SerializeResponse(deck));
         }
 
+        // Updates user's deck configuration
         public string ConfigureDeck(string authToken, string body)
         {
             var (user, error) = AuthenticateUser(authToken);

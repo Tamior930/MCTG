@@ -3,6 +3,7 @@ using MCTG.Presentation.Services;
 
 namespace MCTG.Presentation.Controllers
 {
+    // Manages user profile and stats operations
     public class UserController : BaseController
     {
         private readonly AuthService _authService;
@@ -13,56 +14,7 @@ namespace MCTG.Presentation.Controllers
             _cardService = cardService;
         }
 
-        public string Register(string body)
-        {
-            var credentials = DeserializeBody<Dictionary<string, string>>(body, out var error);
-            if (credentials == null)
-                return CreateResponse(400, error);
-
-            if (!credentials.TryGetValue("Username", out var username) ||
-                !credentials.TryGetValue("Password", out var password) ||
-                string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(password))
-            {
-                return CreateResponse(400, "Username and password are required");
-            }
-
-            return _authService.Register(username, password)
-                ? CreateResponse(201, "Registration successful")
-                : CreateResponse(409, "Username already exists");
-        }
-
-        public string Login(string body)
-        {
-            var credentials = DeserializeBody<Dictionary<string, string>>(body, out var error);
-            if (credentials == null)
-                return CreateResponse(400, error);
-
-            if (!credentials.TryGetValue("Username", out var username) ||
-                !credentials.TryGetValue("Password", out var password) ||
-                string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(password))
-            {
-                return CreateResponse(400, "Username and password are required");
-            }
-
-            var token = _authService.Login(username, password);
-            return token != null
-                ? CreateResponse(200, $"Login successful. Token: {token.Value}")
-                : CreateResponse(401, "Invalid username/password combination");
-        }
-
-        public string Logout(string authToken)
-        {
-            var (user, error) = AuthenticateUser(authToken);
-            if (user == null)
-                return error;
-
-            return _authService.Logout(authToken)
-                ? CreateResponse(200, "Logout successful")
-                : CreateResponse(400, "Logout failed");
-        }
-
+        // Retrieves user profile data
         public string GetUserData(string authToken, string username)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -95,6 +47,7 @@ namespace MCTG.Presentation.Controllers
             return CreateResponse(200, SerializeResponse(userData));
         }
 
+        // Gets user statistics
         public string GetUserStats(string authToken)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -114,6 +67,7 @@ namespace MCTG.Presentation.Controllers
             return CreateResponse(200, SerializeResponse(stats));
         }
 
+        // Retrieves game scoreboard
         public string GetScoreboard(string authToken)
         {
             var (user, error) = AuthenticateUser(authToken);
@@ -133,6 +87,7 @@ namespace MCTG.Presentation.Controllers
             return CreateResponse(200, SerializeResponse(scoreboard));
         }
 
+        // Updates user profile information
         public string UpdateUserData(string authToken, string username, string requestBody)
         {
             var (user, error) = AuthenticateUser(authToken);

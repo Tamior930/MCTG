@@ -12,6 +12,7 @@ namespace MCTG.Presentation.Services
             _userRepository = userRepository;
         }
 
+        // Gets user by authentication token
         public User? GetUserByToken(string authToken)
         {
             if (string.IsNullOrEmpty(authToken))
@@ -22,16 +23,19 @@ namespace MCTG.Presentation.Services
             return _userRepository.GetUserByToken(authToken);
         }
 
+        // Updates user profile information
         public bool UpdateUserProfile(int userId, UserProfile newProfile)
         {
             return _userRepository.UpdateUserProfile(userId, newProfile);
         }
 
+        // Gets scoreboard sorted by ELO rating
         public List<User> GetScoreboard()
         {
             return _userRepository.GetScoreboard();
         }
 
+        // Updates user statistics after battle
         public bool UpdateStats(string authToken, bool won)
         {
             return _userRepository.UpdateUserStats(authToken, won);

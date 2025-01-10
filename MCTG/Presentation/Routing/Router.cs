@@ -28,24 +28,25 @@ namespace MCTG.Presentation.Routing
             _userService = userService;
         }
 
+        // Main routing logic for incoming requests
         public HttpResponse RouteRequest(HttpRequest request)
         {
             try
             {
-                // Step 1: Check if it's a public endpoint (login/register)
+                // Check public endpoints (login/register)
                 if (IsPublicEndpoint(request))
                 {
                     return HandlePublicEndpoints(request);
                 }
 
-                // Step 2: For all other endpoints, verify authentication
+                // Verify authentication for protected endpoints
                 string authToken = TokenUtils.ExtractAuthToken(request);
                 if (!IsValidAuthToken(authToken, out HttpResponse? authResponse))
                 {
                     return authResponse!;
                 }
 
-                // Step 3: Handle the authenticated request based on its path
+                // Route authenticated request
                 return HandleAuthenticatedRequest(request, authToken);
             }
             catch (Exception ex)
@@ -54,12 +55,14 @@ namespace MCTG.Presentation.Routing
             }
         }
 
+        // Checks if endpoint requires authentication
         private bool IsPublicEndpoint(HttpRequest request)
         {
             return (request.Path == "/sessions" && request.Method == "POST") ||  // Login
                    (request.Path == "/users" && request.Method == "POST");       // Register
         }
 
+        // Validates user authentication token
         private bool IsValidAuthToken(string authToken, out HttpResponse? response)
         {
             // Check if token exists
@@ -81,6 +84,7 @@ namespace MCTG.Presentation.Routing
             return true;
         }
 
+        // Handles requests to public endpoints
         private HttpResponse HandlePublicEndpoints(HttpRequest request)
         {
             if (request.Path == "/users" && request.Method == "POST")
@@ -96,6 +100,7 @@ namespace MCTG.Presentation.Routing
             return CreateHttpResponse(404, "Not Found", "Endpoint not found");
         }
 
+        // Routes authenticated requests to appropriate controllers
         private HttpResponse HandleAuthenticatedRequest(HttpRequest request, string authToken)
         {
             // User Management
@@ -133,6 +138,7 @@ namespace MCTG.Presentation.Routing
             }
         }
 
+        // Processes user-related requests
         private HttpResponse HandleUserRequests(HttpRequest request, string authToken)
         {
             string username = GetPathParameter(request.Path, "/users/");
@@ -145,6 +151,7 @@ namespace MCTG.Presentation.Routing
             };
         }
 
+        // Processes card and deck-related requests
         private HttpResponse HandleCardRequests(HttpRequest request, string authToken)
         {
             switch (request.Path)
@@ -166,6 +173,7 @@ namespace MCTG.Presentation.Routing
             }
         }
 
+        // Processes trading-related requests
         private HttpResponse HandleTradingRequests(HttpRequest request, string authToken)
         {
             if (request.Path == "/tradings")
@@ -187,11 +195,13 @@ namespace MCTG.Presentation.Routing
             };
         }
 
+        // Extracts path parameter from request URL
         private string GetPathParameter(string path, string prefix)
         {
             return path.Substring(prefix.Length);
         }
 
+        // Creates HTTP response from response string
         private HttpResponse CreateHttpResponse(string responseString)
         {
             try
@@ -212,6 +222,7 @@ namespace MCTG.Presentation.Routing
             }
         }
 
+        // Creates HTTP response with status and message
         private HttpResponse CreateHttpResponse(int statusCode, string statusDescription, string body)
         {
             return new HttpResponse
@@ -222,6 +233,7 @@ namespace MCTG.Presentation.Routing
             };
         }
 
+        // Creates error response from exception
         private HttpResponse CreateErrorResponse(Exception ex)
         {
             if (ex is UnauthorizedAccessException)

@@ -12,6 +12,7 @@ namespace MCTG.Presentation.Controllers
             _battleService = battleService;
         }
 
+        // Handles battle requests and matchmaking
         public string HandleBattleRequest(string authToken)
         {
             var (user, error) = AuthenticateUser(authToken);
