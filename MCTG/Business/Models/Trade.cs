@@ -5,23 +5,16 @@ namespace MCTG.Business.Models
         public int Id { get; set; }
         public int CardId { get; set; }
         public int UserId { get; set; }
-        public string RequiredType { get; set; }
-        public string? RequiredElementType { get; set; }
-        public string? RequiredMonsterType { get; set; }
-        public int MinimumDamage { get; set; }
+        public string? RequiredType { get; set; }  // "spell" or "monster"
+        public int? MinimumDamage { get; set; }  // optional minimum damage
         public string Status { get; set; }
 
-        public Trade(int id, int cardId, int userId, string requiredType, string? requiredElementType,
-            string? requiredMonsterType, int minimumDamage, bool isActive)
+        public Trade(int cardId, string requiredType, int? minimumDamage = null)
         {
-            Id = id;
             CardId = cardId;
-            UserId = userId;
-            RequiredType = requiredType;
-            RequiredElementType = requiredElementType;
-            RequiredMonsterType = requiredMonsterType;
+            RequiredType = requiredType.ToLower();
             MinimumDamage = minimumDamage;
-            Status = isActive ? "ACTIVE" : "COMPLETED";
+            Status = "ACTIVE";
         }
     }
 }

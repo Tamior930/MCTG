@@ -39,7 +39,7 @@ namespace MCTG.Tests
         public void CreateTradingDeal_WithValidData_ReturnsSuccess()
         {
             // Arrange
-            var trade = new Trade(0, 1, 0, "spell", null, null, 50, true);
+            var trade = new Trade(1, "spell", 50);
 
             _mockCardRepo.Setup(r => r.ValidateCardOwnership(1, 1)).Returns(true);
             _mockDeckRepo.Setup(r => r.IsCardInDeck(1)).Returns(false);
@@ -57,8 +57,7 @@ namespace MCTG.Tests
         public void CreateTradingDeal_WithCardInDeck_ReturnsError()
         {
             // Arrange
-            var trade = new Trade(0, 1, 0, "spell", null, null, 50, true);
-
+            var trade = new Trade(1, "spell", 50);
             _mockCardRepo.Setup(r => r.ValidateCardOwnership(1, 1)).Returns(true);
             _mockDeckRepo.Setup(r => r.IsCardInDeck(1)).Returns(true);
 
@@ -73,8 +72,7 @@ namespace MCTG.Tests
         public void CreateTradingDeal_WithCardNotOwned_ReturnsError()
         {
             // Arrange
-            var trade = new Trade(0, 1, 0, "spell", null, null, 50, true);
-
+            var trade = new Trade(1, "spell", 50);
             _mockCardRepo.Setup(r => r.ValidateCardOwnership(1, 1)).Returns(false);
 
             // Act
@@ -88,8 +86,7 @@ namespace MCTG.Tests
         public void CreateTradingDeal_WithCardAlreadyInTrade_ReturnsError()
         {
             // Arrange
-            var trade = new Trade(0, 1, 0, "spell", null, null, 50, true);
-
+            var trade = new Trade(1, "spell", 50);
             _mockCardRepo.Setup(r => r.ValidateCardOwnership(1, 1)).Returns(true);
             _mockDeckRepo.Setup(r => r.IsCardInDeck(1)).Returns(false);
             _mockTradeRepo.Setup(r => r.IsCardInTrade(1)).Returns(true);
@@ -105,17 +102,19 @@ namespace MCTG.Tests
         public void ExecuteTrade_WithValidData_ReturnsSuccess()
         {
             // Arrange
-            var trade = new Trade(1, 1, 2, "spell", null, null, 50, true);
+            var trade = new Trade(1, "spell", 50);
+            trade.Id = 1;
+            trade.UserId = 2;
             var offeredCard = new SpellCard(2, "OfferedSpell", 60, ElementType.Water);
 
             _mockCardRepo.Setup(r => r.ValidateCardOwnership(2, 1)).Returns(true);
             _mockDeckRepo.Setup(r => r.IsCardInDeck(2)).Returns(false);
-            _mockTradeRepo.Setup(r => r.GetTradeById("1")).Returns(trade);
+            _mockTradeRepo.Setup(r => r.GetTradeById(1)).Returns(trade);
             _mockCardRepo.Setup(r => r.GetCardById(2)).Returns(offeredCard);
-            _mockTradeRepo.Setup(r => r.ExecuteTrade("1", 2, 1)).Returns(true);
+            _mockTradeRepo.Setup(r => r.ExecuteTrade(1, 2, 1)).Returns(true);
 
             // Act
-            var result = _tradingService.ExecuteTrade("1", 2, 1);
+            var result = _tradingService.ExecuteTrade(1, 2, 1);
 
             // Assert
             Assert.That(result, Is.EqualTo("Trading deal successfully executed"));

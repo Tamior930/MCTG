@@ -7,8 +7,8 @@ namespace MCTG.Data.Interfaces
         List<Trade> GetAllTradingDeals();
         bool IsCardInTrade(int cardId);
         bool CreateTrade(Trade trade);
-        Trade GetTradeById(string tradingId);
-        bool DeleteTrade(string tradingId);
-        bool ExecuteTrade(string tradingId, int offeredCardId, int newOwnerId);
+        Trade GetTradeById(int tradingId);
+        bool DeleteTrade(int tradingId);
+        bool ExecuteTrade(int tradingId, int offeredCardId, int newOwnerId);
     }
 }

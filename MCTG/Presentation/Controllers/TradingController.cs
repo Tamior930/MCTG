@@ -36,6 +36,9 @@ namespace MCTG.Presentation.Controllers
             if (trade == null)
                 return CreateResponse(400, error);
 
+            // Set the user ID for the trade
+            trade.UserId = user.Id;
+
             var result = _tradingService.CreateTradingDeal(user, trade);
 
             return result.StartsWith("Error")
@@ -44,7 +47,7 @@ namespace MCTG.Presentation.Controllers
         }
 
         // Removes existing trading deal
-        public string DeleteTradingDeal(string authToken, string tradingId)
+        public string DeleteTradingDeal(string authToken, int tradingId)
         {
             var (user, error) = AuthenticateUser(authToken);
             if (user == null)
@@ -72,7 +75,7 @@ namespace MCTG.Presentation.Controllers
         }
 
         // Processes trade execution between users
-        public string ExecuteTrade(string authToken, string tradingId, string body)
+        public string ExecuteTrade(string authToken, int tradingId, string body)
         {
             var (user, error) = AuthenticateUser(authToken);
             if (user == null)

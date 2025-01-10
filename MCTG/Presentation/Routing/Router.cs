@@ -186,7 +186,7 @@ namespace MCTG.Presentation.Routing
                 };
             }
 
-            string tradingId = GetPathParameter(request.Path, "/tradings/");
+            int tradingId = int.Parse(GetPathParameter(request.Path, "/tradings/"));
             return request.Method switch
             {
                 "DELETE" => CreateHttpResponse(_tradingController.DeleteTradingDeal(authToken, tradingId)),

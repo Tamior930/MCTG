@@ -94,11 +94,7 @@ namespace MCTG.Data
                             -- Trade Details
                             card_id INT REFERENCES cards(id),
                             user_id INT REFERENCES users(id),
-                            
-                            -- Trade Requirements
-                            required_type VARCHAR(20),
-                            required_element_type VARCHAR(20),
-                            required_monster_type VARCHAR(20),
+                            required_type VARCHAR(10) CHECK (required_type IN ('spell', 'monster')),
                             minimum_damage INT,
                             
                             -- Status

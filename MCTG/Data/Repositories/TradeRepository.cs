@@ -34,16 +34,17 @@ namespace MCTG.Data.Repositories
         // Maps database row to Trade object
         private Trade MapTradeFromDatabase(NpgsqlDataReader reader)
         {
-            return new Trade(
-                reader.GetInt32(reader.GetOrdinal("id")),
+            var trade = new Trade(
                 reader.GetInt32(reader.GetOrdinal("card_id")),
-                reader.GetInt32(reader.GetOrdinal("user_id")),
                 reader.GetString(reader.GetOrdinal("required_type")),
-                reader.IsDBNull(reader.GetOrdinal("required_element_type")) ? null : reader.GetString(reader.GetOrdinal("required_element_type")),
-                reader.IsDBNull(reader.GetOrdinal("required_monster_type")) ? null : reader.GetString(reader.GetOrdinal("required_monster_type")),
-                reader.GetInt32(reader.GetOrdinal("minimum_damage")),
-                reader.GetString(reader.GetOrdinal("status")) == "ACTIVE"
+                reader.IsDBNull(reader.GetOrdinal("minimum_damage")) ? null : reader.GetInt32(reader.GetOrdinal("minimum_damage"))
             );
+
+            trade.Id = reader.GetInt32(reader.GetOrdinal("id"));
+            trade.UserId = reader.GetInt32(reader.GetOrdinal("user_id"));
+            trade.Status = reader.GetString(reader.GetOrdinal("status"));
+
+            return trade;
         }
 
         // Creates a new trading deal
@@ -56,23 +57,16 @@ namespace MCTG.Data.Repositories
                 using var command = connection.CreateCommand();
 
                 command.CommandText = @"
-                    INSERT INTO trades (card_id, user_id, required_type, required_element_type, 
-                                      required_monster_type, minimum_damage, status) 
-                    VALUES (@cardId, @userId, @requiredType, @requiredElementType, 
-                            @requiredMonsterType, @minimumDamage, 'ACTIVE')
+                    INSERT INTO trades (card_id, user_id, required_type, minimum_damage, status) 
+                    VALUES (@cardId, @userId, @requiredType, @minimumDamage, 'ACTIVE')
                     RETURNING id";
 
                 command.Parameters.AddWithValue("@cardId", trade.CardId);
                 command.Parameters.AddWithValue("@userId", trade.UserId);
                 command.Parameters.AddWithValue("@requiredType", trade.RequiredType);
-                command.Parameters.AddWithValue("@requiredElementType",
-                    (object?)trade.RequiredElementType ?? DBNull.Value);
-                command.Parameters.AddWithValue("@requiredMonsterType",
-                    (object?)trade.RequiredMonsterType ?? DBNull.Value);
                 command.Parameters.AddWithValue("@minimumDamage", trade.MinimumDamage);
 
-                var id = Convert.ToInt32(command.ExecuteScalar());
-                trade.Id = id;
+                trade.Id = Convert.ToInt32(command.ExecuteScalar());
                 return true;
             }
             catch (Exception ex)
@@ -104,7 +98,7 @@ namespace MCTG.Data.Repositories
         }
 
         // Retrieves a specific trade by ID
-        public Trade GetTradeById(string tradingId)
+        public Trade GetTradeById(int tradingId)
         {
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
@@ -120,7 +114,7 @@ namespace MCTG.Data.Repositories
         }
 
         // Marks a trade as deleted
-        public bool DeleteTrade(string tradingId)
+        public bool DeleteTrade(int tradingId)
         {
             using var connection = _databaseHandler.GetConnection();
             connection.Open();
@@ -130,7 +124,7 @@ namespace MCTG.Data.Repositories
             {
                 using var command = connection.CreateCommand();
                 command.CommandText = "UPDATE trades SET status = 'DELETED' WHERE id = @tradingId";
-                command.Parameters.AddWithValue("@tradingId", int.Parse(tradingId));
+                command.Parameters.AddWithValue("@tradingId", tradingId);
 
                 int rowsAffected = command.ExecuteNonQuery();
                 transaction.Commit();
@@ -144,7 +138,7 @@ namespace MCTG.Data.Repositories
         }
 
         // Executes a trade between two users
-        public bool ExecuteTrade(string tradingId, int offeredCardId, int newOwnerId)
+        public bool ExecuteTrade(int tradingId, int offeredCardId, int newOwnerId)
         {
             using var connection = _databaseHandler.GetConnection();
             connection.Open();

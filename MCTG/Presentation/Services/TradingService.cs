@@ -45,7 +45,11 @@ namespace MCTG.Presentation.Services
                 if (string.IsNullOrEmpty(trade.RequiredType))
                     return "Error: Required type must be specified";
 
-                if (trade.MinimumDamage <= 0)
+                if (!trade.RequiredType.Equals("spell", StringComparison.OrdinalIgnoreCase) &&
+                    !trade.RequiredType.Equals("monster", StringComparison.OrdinalIgnoreCase))
+                    return "Error: Required type must be either 'spell' or 'monster'";
+
+                if (trade.MinimumDamage.HasValue && trade.MinimumDamage.Value <= 0)
                     return "Error: Minimum damage must be greater than 0";
 
                 trade.UserId = user.Id;
@@ -63,7 +67,7 @@ namespace MCTG.Presentation.Services
         }
 
         // Removes existing trading deal
-        public string DeleteTradingDeal(string tradingId)
+        public string DeleteTradingDeal(int tradingId)
         {
             try
             {
@@ -79,13 +83,13 @@ namespace MCTG.Presentation.Services
         }
 
         // Gets specific trading deal by ID
-        public Trade GetTradingDealById(string tradingId)
+        public Trade GetTradingDealById(int tradingId)
         {
             return _tradeRepository.GetTradeById(tradingId);
         }
 
         // Processes trade execution between users
-        public string ExecuteTrade(string tradingId, int offeredCardId, int newOwnerId)
+        public string ExecuteTrade(int tradingId, int offeredCardId, int newOwnerId)
         {
             if (!_cardRepository.ValidateCardOwnership(offeredCardId, newOwnerId))
                 return "Error: You don't own this card";
@@ -119,11 +123,13 @@ namespace MCTG.Presentation.Services
             var offeredCard = _cardRepository.GetCardById(offeredCardId);
             if (offeredCard == null) return false;
 
-            // Check if the offered card type matches the required type for the trade
-            if (!offeredCard.Type.ToString().Equals(trade.RequiredType, StringComparison.OrdinalIgnoreCase))
-                return false;
+            // Check if the offered card type matches the required type
+            bool isSpellRequired = trade.RequiredType.Equals("spell", StringComparison.OrdinalIgnoreCase);
+            bool isSpellOffered = offeredCard.Type == CardType.Spell;
+            if (isSpellRequired != isSpellOffered) return false;
 
-            if (offeredCard.Damage < trade.MinimumDamage)
+            // Check minimum damage requirement if specified
+            if (trade.MinimumDamage.HasValue && offeredCard.Damage < trade.MinimumDamage.Value)
                 return false;
 
             return true;
