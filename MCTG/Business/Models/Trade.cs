@@ -9,7 +9,7 @@ namespace MCTG.Business.Models
         public string? RequiredElementType { get; set; }
         public string? RequiredMonsterType { get; set; }
         public int MinimumDamage { get; set; }
-        public string Status { get; set; } = "ACTIVE";
+        public string Status { get; set; }
 
         public Trade(int id, int cardId, int userId, string requiredType, string? requiredElementType,
             string? requiredMonsterType, int minimumDamage, bool isActive)

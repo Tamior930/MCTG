@@ -5,13 +5,11 @@ namespace MCTG.Presentation.Controllers
     public class BattleController : BaseController
     {
         private readonly BattleService _battleService;
-        private readonly CardService _cardService;
 
-        public BattleController(BattleService battleService, UserService userService, CardService cardService)
+        public BattleController(BattleService battleService, UserService userService)
             : base(userService)
         {
             _battleService = battleService;
-            _cardService = cardService;
         }
 
         public string HandleBattleRequest(string authToken)

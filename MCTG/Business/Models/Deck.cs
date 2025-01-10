@@ -12,9 +12,6 @@
 
         public void SetDeck(List<Card> selectedCards)
         {
-            if (selectedCards.Count != MAX_CARDS)
-                throw new ArgumentException($"Deck must contain exactly {MAX_CARDS} cards!");
-
             Cards = new List<Card>(selectedCards);
         }
     }

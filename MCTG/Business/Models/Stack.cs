@@ -11,9 +11,6 @@ namespace MCTG.Business.Models
 
         public void AddCard(Card card)
         {
-            if (card == null)
-                throw new ArgumentNullException(nameof(card));
-
             Cards.Add(card);
         }
     }

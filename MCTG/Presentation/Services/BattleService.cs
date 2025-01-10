@@ -13,24 +13,6 @@ namespace MCTG.Presentation.Services
         private static readonly ConcurrentQueue<BattleRequest> _waitingPlayers = new ConcurrentQueue<BattleRequest>();
         private const int MAX_ROUNDS = 100;
 
-        public class BattleRequest
-        {
-            public int UserId { get; set; }
-            public string Username { get; set; }
-            public List<Card> Deck { get; set; }
-            public DateTime Timestamp { get; set; }
-
-            public BattleRequest(int userId, string username, List<Card> deck)
-            {
-                UserId = userId;
-                Username = username;
-                Deck = deck;
-                Timestamp = DateTime.Now;
-            }
-
-            public bool IsExpired() => (DateTime.Now - Timestamp).TotalMinutes > 5;
-        }
-
         public BattleService(IDeckRepository deckRepository, IUserRepository userRepository, ICardRepository cardRepository)
         {
             _deckRepository = deckRepository;

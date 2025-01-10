@@ -23,19 +23,27 @@ namespace MCTG.Presentation.Services
         public string PurchasePackage(User user)
         {
             if (user.Coins < PACKAGE_COST)
+            {
                 return "Error: Insufficient coins";
+            }
 
             try
             {
                 var package = _cardRepository.GetRandomCardsForPackage(PACKAGE_SIZE);
                 if (package.Count != PACKAGE_SIZE)
+                {
                     return "Error: Failed to create package";
+                }
 
                 if (_userRepository.UpdateUserCoins(user.Id, -PACKAGE_COST))
                 {
                     user.UpdateCoins(-PACKAGE_COST);
                     foreach (var card in package)
                     {
+                        if (card == null)
+                        {
+                            return "Error: Invalid card in package";
+                        }
                         user.Stack.AddCard(card);
                         _cardRepository.UpdateCardOwnership(card, user.Id);
                     }

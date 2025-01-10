@@ -7,7 +7,7 @@ namespace MCTG.Data.Interfaces
         void AddUser(User user);
         User GetUserByToken(string authToken);
         User GetUserByUsername(string username);
-        User? GetUserById(int userId);
+        User GetUserById(int userId);
         bool UpdateUserProfile(int userId, UserProfile profile);
         bool UpdateUserStats(string authToken, bool won);
         bool UpdateUserCoins(int userId, int amount);

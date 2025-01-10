@@ -76,7 +76,7 @@ namespace MCTG.Presentation.Controllers
 
             var request = DeserializeBody<Dictionary<string, int>>(body, out error);
             if (request == null || !request.ContainsKey("Id"))
-                return CreateResponse(400, "Invalid request format. Expected: {\"Id\": cardId}");
+                return CreateResponse(400, error);
 
             int offeredCardId = request["Id"];
 

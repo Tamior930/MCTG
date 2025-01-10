@@ -44,7 +44,7 @@ namespace MCTG.Presentation
 
             AuthController authController = new AuthController(authService, userService);
             UserController userController = new UserController(userService, authService, cardService);
-            BattleController battleController = new BattleController(battleService, userService, cardService);
+            BattleController battleController = new BattleController(battleService, userService);
             CardController cardController = new CardController(cardService, userService);
             TradingController tradingController = new TradingController(tradingService, userService);
 

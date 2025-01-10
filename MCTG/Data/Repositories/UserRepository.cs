@@ -274,7 +274,7 @@ namespace MCTG.Data.Repositories
             }
         }
 
-        public User? GetUserById(int userId)
+        public User GetUserById(int userId)
         {
             using var connection = _databaseHandler.GetConnection();
             connection.Open();

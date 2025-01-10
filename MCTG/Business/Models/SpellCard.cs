@@ -8,7 +8,7 @@ namespace MCTG.Business.Models
             : base(id, name, damage, elementType, CardType.Spell)
         {
         }
-        
+
         public override double CalculateDamage(ICard opponent)
         {
             if (opponent is MonsterCard monsterCard)
