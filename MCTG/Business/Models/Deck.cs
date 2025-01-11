@@ -2,7 +2,6 @@
 {
     public class Deck
     {
-        private const int MAX_CARDS = 4;
         public List<Card> Cards { get; private set; }
 
         public Deck()
