@@ -21,7 +21,7 @@ namespace MCTG.Presentation.Controllers
             if (user == null)
                 return error;
 
-            if (user.Username != username && !user.Username.Equals("admin"))
+            if (user.Username != username)
                 return CreateResponse(403, "Access denied. You can only view your own data.");
 
             var targetUser = _userService.GetUserByToken(authToken);
@@ -96,7 +96,7 @@ namespace MCTG.Presentation.Controllers
                 return error;
             }
 
-            if (user.Username != username && !user.Username.Equals("admin"))
+            if (user.Username != username)
                 return CreateResponse(403, "Access denied. You can only update your own profile.");
 
             try

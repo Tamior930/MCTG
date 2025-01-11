@@ -12,7 +12,8 @@ namespace MCTG.Tests
         [SetUp]
         public void Setup()
         {
-            _cardRepository = new CardRepository(); // We don't need DB for these tests
+            // Initialize the CardRepository
+            _cardRepository = new CardRepository();
         }
 
         [Test]
@@ -25,37 +26,39 @@ namespace MCTG.Tests
         [TestCase("FireFireElf", MonsterType.FireElf)]
         public void DetermineMonsterType_ValidNames_ReturnsCorrectType(string cardName, MonsterType expectedType)
         {
-            // Act
+            // Act: Determine the monster type based on the card name
             var result = _cardRepository.DetermineMonsterType(cardName);
 
-            // Assert
+            // Assert: Verify that the correct monster type is returned
             Assert.That(result, Is.EqualTo(expectedType));
         }
 
         [Test]
         public void DetermineMonsterType_InvalidName_ThrowsArgumentException()
         {
-            // Arrange
+            // Arrange: Set up an invalid card name
             string invalidName = "InvalidMonster";
 
-            // Act & Assert
+            // Act & Assert: Verify that an ArgumentException is thrown for an invalid name
             Assert.Throws<ArgumentException>(() => _cardRepository.DetermineMonsterType(invalidName));
         }
 
         [Test]
         public void GenerateRandomCard_GeneratesValidName()
         {
-            // Act
+            // Act: Generate a random card
             var card = Card.GenerateRandomCard();
 
-            // Assert
+            // Assert: Verify that the generated card has a valid name
             Assert.That(card.Name, Is.Not.Null.Or.Empty);
             if (card is MonsterCard monsterCard)
             {
+                // If the card is a MonsterCard, ensure it has a valid monster type
                 Assert.DoesNotThrow(() => _cardRepository.DetermineMonsterType(card.Name));
             }
             else
             {
+                // If the card is not a MonsterCard, ensure it contains "Spell" in its name
                 Assert.That(card.Name, Does.Contain("Spell"));
             }
         }
