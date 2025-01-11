@@ -249,7 +249,6 @@ echo Showing scoreboard...
 curl -X GET %BASE_URL%/score -H "Authorization: %USER1_TOKEN%"
 goto MENU
 
-:END
 echo.
 echo Testing completed!
 pause
