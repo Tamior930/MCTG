@@ -106,10 +106,22 @@ namespace MCTG.Presentation.Services
 
             try
             {
+                // Get both cards before the trade
+                var offeredCard = _cardRepository.GetCardById(offeredCardId);
+                var tradedCard = _cardRepository.GetCardById(trade.CardId);
+                
+                if (offeredCard == null || tradedCard == null)
+                    return "Error: One or both cards not found";
+
                 bool success = _tradeRepository.ExecuteTrade(tradingId, offeredCardId, newOwnerId);
-                return success
-                    ? "Trading deal successfully executed"
-                    : "Error: Failed to execute trade";
+                if (!success)
+                    return "Error: Failed to execute trade";
+
+                // Update cards in memory after successful database update
+                _cardRepository.UpdateCardOwnership(offeredCard, trade.UserId);  // Original owner gets the offered card
+                _cardRepository.UpdateCardOwnership(tradedCard, newOwnerId);     // New owner gets the traded card
+
+                return "Trading deal successfully executed";
             }
             catch (Exception ex)
             {

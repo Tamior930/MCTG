@@ -82,10 +82,10 @@ namespace MCTG.Presentation.Controllers
                 return error;
 
             var request = DeserializeBody<Dictionary<string, int>>(body, out error);
-            if (request == null || !request.ContainsKey("Id"))
-                return CreateResponse(400, error);
+            if (request == null || !request.ContainsKey("CardId"))
+                return CreateResponse(400, "Invalid request format");
 
-            int offeredCardId = request["Id"];
+            int offeredCardId = request["CardId"];
 
             try
             {

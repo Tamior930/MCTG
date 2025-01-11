@@ -108,7 +108,8 @@ namespace MCTG.Data.Repositories
             command.Parameters.AddWithValue("@tradingId", tradingId);
 
             using var reader = command.ExecuteReader();
-            reader.Read();
+            if (!reader.Read())  // Check if there's any data before reading
+                return null;     // Return null if no trade found
 
             return MapTradeFromDatabase(reader);
         }
@@ -147,26 +148,47 @@ namespace MCTG.Data.Repositories
             try
             {
                 var trade = GetTradeById(tradingId);
-                if (trade == null) return false;
+                if (trade == null) 
+                {
+                    Console.WriteLine("Trade not found");
+                    return false;
+                }
 
                 using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    UPDATE cards SET user_id = @newOwnerId WHERE id = @offeredCardId;
-                    UPDATE cards SET user_id = @oldOwnerId WHERE id = @tradeCardId;
-                    UPDATE trades SET status = 'COMPLETED' WHERE id = @tradingId";
+                command.Transaction = transaction;
 
-                command.Parameters.AddWithValue("@newOwnerId", newOwnerId);
+                // First update: offered card ownership
+                command.CommandText = "UPDATE cards SET user_id = @newOwnerId WHERE id = @offeredCardId";
+                command.Parameters.AddWithValue("@newOwnerId", trade.UserId);  // Original owner gets the offered card
                 command.Parameters.AddWithValue("@offeredCardId", offeredCardId);
-                command.Parameters.AddWithValue("@oldOwnerId", trade.UserId);
-                command.Parameters.AddWithValue("@tradeCardId", trade.CardId);
-                command.Parameters.AddWithValue("@tradingId", tradingId);
+                int rowsAffected1 = command.ExecuteNonQuery();
 
-                command.ExecuteNonQuery();
+                // Second update: traded card ownership
+                command.CommandText = "UPDATE cards SET user_id = @newOwnerId2 WHERE id = @tradeCardId";
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@newOwnerId2", newOwnerId);  // New owner gets the traded card
+                command.Parameters.AddWithValue("@tradeCardId", trade.CardId);
+                int rowsAffected2 = command.ExecuteNonQuery();
+
+                // Mark trade as completed
+                command.CommandText = "UPDATE trades SET status = 'COMPLETED' WHERE id = @tradingId";
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@tradingId", tradingId);
+                int rowsAffected3 = command.ExecuteNonQuery();
+
+                if (rowsAffected1 == 0 || rowsAffected2 == 0 || rowsAffected3 == 0)
+                {
+                    Console.WriteLine($"Trade failed: Cards updated: {rowsAffected1}, {rowsAffected2}, Trade status: {rowsAffected3}");
+                    transaction.Rollback();
+                    return false;
+                }
+
                 transaction.Commit();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error executing trade: {ex.Message}");
                 transaction.Rollback();
                 return false;
             }
