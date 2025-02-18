@@ -58,7 +58,7 @@ A server-based card trading game where players can battle with fantasy creatures
 3. **Project Setup**
    ```bash
    # Clone the repository
-   git clone [repository-url]
+   git clone https://github.com/Tamior930/MCTG.git
    cd MCTG
 
    # Restore dependencies
